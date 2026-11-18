@@ -679,6 +679,58 @@
     border-top: 2px solid rgba(126, 249, 255, .14);
   }
 
+  .workbench {
+    position: relative;
+    margin: 30px 0 0;
+    border: 3px solid var(--edge);
+    background: var(--panel);
+    box-shadow: 6px 6px 0 var(--shadow);
+    overflow: hidden;
+  }
+
+  .workbench img {
+    display: block;
+    width: 100%;
+    height: clamp(180px, 26vw, 320px);
+    object-fit: cover;
+    filter: saturate(.82) contrast(1.06) brightness(.9);
+  }
+
+  .workbench::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(to bottom, rgba(0, 0, 0, .14) 0 1px, transparent 1px 4px),
+      linear-gradient(180deg, rgba(6, 60, 84, .12), rgba(1, 10, 18, .45));
+  }
+
+  .workbench figcaption {
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: rgba(1, 10, 18, .8);
+    border-top: 2px solid rgba(126, 249, 255, .16);
+    font-size: 1rem;
+    color: var(--ink-dim);
+  }
+
+  .workbench figcaption span:first-child {
+    font-family: var(--font-pixel);
+    font-size: .48rem;
+    letter-spacing: .06em;
+    color: var(--foam);
+  }
+
   @media (max-width: 860px) {
     .about-grid { grid-template-columns: 1fr; }
   }
@@ -884,50 +936,6 @@
       object-fit: cover;
     }
     .card--feature .card-body { padding: 30px 28px 26px; }
-  }
-
-  /* pixel plates for projects without photos */
-  .plate {
-    position: relative;
-    display: grid;
-    place-items: center;
-    aspect-ratio: 16 / 10;
-    border-bottom: 3px solid var(--edge);
-    overflow: hidden;
-  }
-
-  .plate::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    opacity: .5;
-    background:
-      repeating-linear-gradient(to bottom, rgba(255, 255, 255, .04) 0 1px, transparent 1px 5px);
-  }
-
-  .plate svg { width: 58%; height: auto; max-height: 78%; }
-
-  .plate--claw { background: linear-gradient(180deg, #073246, #041c2a); }
-  .plate--meter { background: linear-gradient(180deg, #083a3f, #041e24); }
-  .plate--plasma { background: radial-gradient(circle at 50% 55%, #2a1140 0%, #0a1020 55%, #03080f 100%); }
-
-  .plate--plasma::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 55%;
-    width: 46%;
-    height: 46%;
-    transform: translate(-50%, -50%);
-    background: radial-gradient(circle, rgba(255, 120, 220, .55), rgba(126, 249, 255, .22) 42%, transparent 70%);
-    filter: blur(6px);
-    animation: flicker 3.4s steps(3, end) infinite;
-  }
-
-  @keyframes flicker {
-    0%, 100% { opacity: .7; }
-    35% { opacity: 1; }
-    62% { opacity: .55; }
   }
 
   /* --- stack ------------------------------------------------------ */
@@ -1339,12 +1347,21 @@
           </aside>
 
           <figure class="aside-photo reveal">
-            <img src="img/bench-claw.webp" width="760" height="570" loading="lazy" decoding="async"
-                 alt="Servo-driven robotic claw on a bench beside an ESP32 dev board and wiring." />
-            <figcaption>FIELD NOTE &mdash; SERVO CLAW RIG, BENCH TEST</figcaption>
+            <img src="img/claw-rover.webp" width="760" height="570" loading="lazy" decoding="async"
+                 alt="Four-wheeled rover with a servo-driven claw arm on concrete during a field test." />
+            <figcaption>FIELD NOTE &mdash; CLAW ROVER, FIELD TEST</figcaption>
           </figure>
         </div>
       </div>
+
+      <figure class="workbench reveal">
+        <img src="img/workbench.webp" width="1200" height="514" loading="lazy" decoding="async"
+             alt="Night-time desk setup with two screens of code, a red-lit PC tower and rover builds on the bench." />
+        <figcaption>
+          <span>THE BENCH</span>
+          <span>Where the wiring, the soldering and the smoke tests happen.</span>
+        </figcaption>
+      </figure>
     </div>
   </section>
 
@@ -1402,28 +1419,10 @@
 
         <!-- ParoClaw -->
         <article class="card reveal">
-          <div class="plate plate--claw" aria-hidden="true">
-            <svg viewBox="0 0 120 96" shape-rendering="crispEdges">
-              <g fill="#7ef9ff">
-                <rect x="44" y="8" width="32" height="8"/>
-                <rect x="36" y="16" width="48" height="40"/>
-                <rect x="28" y="26" width="8" height="22"/>
-                <rect x="84" y="26" width="8" height="22"/>
-              </g>
-              <g fill="#02121c">
-                <rect x="44" y="28" width="10" height="10"/>
-                <rect x="66" y="28" width="10" height="10"/>
-                <rect x="52" y="44" width="16" height="5"/>
-              </g>
-              <g fill="#d9a7ff">
-                <rect x="52" y="56" width="16" height="10"/>
-                <rect x="46" y="66" width="28" height="8"/>
-              </g>
-              <g fill="#ffd76a">
-                <rect x="52" y="20" width="16" height="4"/>
-                <rect x="56" y="4" width="8" height="6"/>
-              </g>
-            </svg>
+          <div class="card-media">
+            <img src="img/paroclaw.webp" width="760" height="475" loading="lazy" decoding="async"
+                 alt="ParoClaw chat log where the agent captures a camera snapshot and describes the frame it sees." />
+            <figcaption>VISION TOOL, LAN</figcaption>
           </div>
           <div class="card-body">
             <div class="card-top">
@@ -1448,31 +1447,10 @@
 
         <!-- EM2M -->
         <article class="card reveal">
-          <div class="plate plate--meter" aria-hidden="true">
-            <svg viewBox="0 0 120 96" shape-rendering="crispEdges">
-              <g fill="#0b3340">
-                <rect x="16" y="12" width="88" height="72"/>
-              </g>
-              <g fill="#7ef9ff">
-                <rect x="22" y="18" width="76" height="40"/>
-              </g>
-              <g fill="#02121c">
-                <rect x="28" y="24" width="10" height="26"/>
-                <rect x="42" y="24" width="10" height="26"/>
-                <rect x="56" y="24" width="10" height="26"/>
-                <rect x="70" y="24" width="10" height="26"/>
-                <rect x="84" y="24" width="8" height="26"/>
-              </g>
-              <g fill="#79f7b0">
-                <rect x="28" y="66" width="16" height="6"/>
-                <rect x="50" y="66" width="16" height="6"/>
-                <rect x="72" y="66" width="16" height="6"/>
-              </g>
-              <g fill="#ffd76a">
-                <rect x="24" y="78" width="8" height="4"/>
-                <rect x="88" y="78" width="8" height="4"/>
-              </g>
-            </svg>
+          <div class="card-media">
+            <img src="img/em2m.webp" width="760" height="475" loading="lazy" decoding="async"
+                 alt="Selec EM2M energy meter wired to an ESP32 and RS485 module inside a panel enclosure." />
+            <figcaption>METER + NODE, PANEL</figcaption>
           </div>
           <div class="card-body">
             <div class="card-top">
@@ -1550,38 +1528,10 @@
 
         <!-- Vacuum plasma -->
         <article class="card reveal">
-          <div class="plate plate--plasma" aria-hidden="true">
-            <svg viewBox="0 0 120 96" shape-rendering="crispEdges">
-              <g fill="#0d2438">
-                <rect x="14" y="8" width="92" height="80"/>
-              </g>
-              <g fill="#1d5d7a">
-                <rect x="18" y="12" width="84" height="72"/>
-              </g>
-              <g fill="#061620">
-                <rect x="22" y="16" width="76" height="64"/>
-              </g>
-              <g fill="#d9a7ff">
-                <rect x="24" y="26" width="10" height="44"/>
-                <rect x="86" y="26" width="10" height="44"/>
-              </g>
-              <g fill="#ff7ad9">
-                <rect x="40" y="34" width="40" height="6"/>
-                <rect x="36" y="40" width="48" height="6"/>
-                <rect x="44" y="46" width="32" height="6"/>
-                <rect x="38" y="52" width="44" height="6"/>
-                <rect x="46" y="58" width="28" height="6"/>
-              </g>
-              <g fill="#7ef9ff">
-                <rect x="34" y="40" width="6" height="6"/>
-                <rect x="80" y="46" width="6" height="6"/>
-                <rect x="52" y="30" width="6" height="4"/>
-              </g>
-              <g fill="#ffd76a">
-                <rect x="56" y="4" width="8" height="6"/>
-                <rect x="56" y="86" width="8" height="6"/>
-              </g>
-            </svg>
+          <div class="card-media">
+            <img src="img/vacuum-plasma.webp" width="760" height="475" loading="lazy" decoding="async"
+                 alt="Glowing purple plasma discharge inside the hand-built low-pressure vacuum chamber." />
+            <figcaption>DISCHARGE, LOW PRESSURE</figcaption>
           </div>
           <div class="card-body">
             <div class="card-top">
