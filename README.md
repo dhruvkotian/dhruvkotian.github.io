@@ -11,21 +11,22 @@ A single hand-written `index.html` with inline CSS and JavaScript:
 - No frameworks, no build step, no trackers.
 - **Pixel ocean theme** that descends with scroll: bright surface water, then mid-water, deep, and abyss. Five stacked CSS gradient layers are cross-faded from `scrollTop`, with a fixed depth gauge on wide screens.
 - CSS-only light rays, rising bubbles, marine snow and scanlines. No canvas, no background images.
+- Six pixel fish built from one SVG `<symbol>`, gliding on transform/translate animations. They fade in below the surface and are hidden under `prefers-reduced-motion`.
 - Inline SVG pixel art: sun, clouds, sailboat, coral, anglerfish.
-- Photographs are local `webp` files in `img/`, resized to 760 px wide (1200 px for the wide bench band), lazy-loaded.
+- Photographs are local `webp` files in `img/`, 760 px wide (1800 px for the wide bench band), lazy-loaded.
 - Two Google fonts (`Press Start 2P`, `VT323`); everything degrades to system monospace.
 
-Total payload is roughly 60 KB of HTML plus ~360 KB of photos.
+Total payload is roughly 60 KB of HTML plus ~300 KB of photos.
 
 ## Sections
 
 | Section | Content |
 |---|---|
 | Surface | Name, tagline, status chips, links |
-| 01 Dive log | Biography, spec sheet, claw-rover photo, wide bench band |
+| 01 Dive log | Biography, spec sheet, wide bench band |
 | 02 The wrecks | Seven project cards (HyperWatch, ParoClaw, EM2M, AI Tunnel Fan, AI EV BMS, Vacuum Plasma Chamber, Pi Camera) |
 | 03 Cargo hold | Languages, embedded, edge AI, connectivity, bench skills |
-| Seafloor | Contact links (LinkedIn, GitHub) and colophon |
+| Seafloor | Contact links (LinkedIn, GitHub, ORCID) and colophon |
 
 ## Deploying
 
