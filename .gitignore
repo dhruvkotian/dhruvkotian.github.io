@@ -1,0 +1,4 @@
+# Unoptimised source photos live next to the site but are not deployed.
+# Only the generated webp copies in img/ are tracked.
+img/*.jpeg
+img/*.jpg

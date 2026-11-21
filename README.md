@@ -25,7 +25,7 @@ Total payload is roughly 72 KB of HTML plus ~400 KB of photos.
 |---|---|
 | Surface | Name, tagline, status chips, links |
 | 01 Dive log | Biography, spec sheet, wide bench band |
-| 02 The wrecks | Nine project cards in a horizontal snap deck (HyperWatch, ParoClaw, EM2M, AI Tunnel Fan, AI EV BMS, Vacuum Plasma Chamber, Pi Camera, Semi-Humanoid, Mobile Manipulator) |
+| 02 The wrecks | Nine project cards in a horizontal snap deck (ParoClaw, Vacuum Plasma Chamber, EM2M, HyperWatch, AI Tunnel Fan, AI EV BMS, Pi Camera, Semi-Humanoid, Mobile Manipulator) |
 | 03 Cargo hold | Languages, embedded, edge AI, connectivity, bench skills |
 | Seafloor | Contact links (LinkedIn, GitHub, ORCID) and colophon |
 
@@ -44,7 +44,7 @@ git push origin master
 ## Editing
 
 - Biography, project cards and stack chips all live in `index.html`.
-- Project cards are `<article class="card">` blocks inside `#projects`. The first card (`.card--feature`) spans the grid on desktop.
+- Project cards are `<article class="card">` blocks inside `#projectRail`, in deck order. Add or remove one and the counter and dots follow automatically.
 - Cards use `.card-media` with a local photo and a pixel captions; every project has one.
 - The wide band under the about grid is `figure.workbench`.
 - The depth cross-fades are computed in the first `<script>` block (`ramp()` calls). Adjust the numbers to change where each water layer takes over.

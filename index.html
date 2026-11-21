@@ -794,7 +794,7 @@
     font-family: var(--font-pixel);
     font-size: .5rem;
     color: var(--foam);
-    margin-right: 4px;
+    margin-left: 5px;
   }
 
   .rail-count span:first-child { color: var(--sun); }
@@ -889,15 +889,13 @@
     scroll-snap-stop: always;
   }
 
-  .cards .card--feature { flex-basis: min(880px, calc(100% - 34px)); }
-
   /* the deck is one unit: don't fade individual cards, or the next
      slide's peek would read as empty space */
   .cards .reveal { opacity: 1; transform: none; }
 
   @media (max-width: 720px) {
-    .rail-bar { justify-content: flex-end; }
-    .rail-left { display: none; }
+    .rail-bar { justify-content: flex-start; }
+    .rail-hint, .rail-dots { display: none; }
   }
 
   .card {
@@ -1049,51 +1047,6 @@
     letter-spacing: .05em;
     color: var(--foam);
     background: rgba(1, 10, 18, .78);
-  }
-
-  .card-media--split {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 3px;
-    background: var(--edge);
-  }
-
-  .card-media--split figure {
-    position: relative;
-    margin: 0;
-    overflow: hidden;
-  }
-
-  @media (max-width: 560px) {
-    .card-media--split { grid-template-columns: 1fr; }
-  }
-
-  /* featured card */
-  .card--feature { grid-column: 1 / -1; }
-
-  .card--feature .card-body { padding: 24px 24px 22px; }
-
-  .card--feature h3 { font-size: .95rem; }
-
-  @media (min-width: 860px) {
-    .card--feature {
-      display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-      align-items: stretch;
-    }
-    .card--feature .card-media {
-      border-bottom: 0;
-      border-right: 3px solid var(--edge);
-      min-height: 380px;
-    }
-    .card--feature .card-media--split figure { height: 100%; min-height: 0; }
-    .card--feature .card-media img {
-      aspect-ratio: auto;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .card--feature .card-body { padding: 30px 28px 26px; }
   }
 
   /* --- stack ------------------------------------------------------ */
@@ -1556,56 +1509,19 @@
 
       <div class="rail-bar reveal">
         <div class="rail-left">
+          <div class="rail-nav">
+            <button class="rail-btn" type="button" data-rail-prev aria-label="Previous project" aria-controls="projectRail"></button>
+            <button class="rail-btn" type="button" data-rail-next aria-label="Next project" aria-controls="projectRail"></button>
+            <span class="rail-count" aria-hidden="true"><span id="railNow">01</span> / <span id="railTotal">09</span></span>
+          </div>
           <span class="rail-hint">SLIDE DECK</span>
-          <div class="rail-dots" id="railDots" aria-label="Choose a project"></div>
         </div>
-        <div class="rail-nav">
-          <span class="rail-count" aria-hidden="true"><span id="railNow">01</span> / <span id="railTotal">09</span></span>
-          <button class="rail-btn" type="button" data-rail-prev aria-label="Previous project" aria-controls="projectRail"></button>
-          <button class="rail-btn" type="button" data-rail-next aria-label="Next project" aria-controls="projectRail"></button>
-        </div>
+        <div class="rail-dots" id="railDots" aria-label="Choose a project"></div>
       </div>
 
       <div class="rail-wrap">
         <div class="cards" id="projectRail" data-rail tabindex="0" role="group"
              aria-roledescription="carousel" aria-label="Project deck">
-        <!-- HyperWatch (featured) -->
-        <article class="card card--feature reveal">
-          <div class="card-media card-media--split">
-            <figure>
-              <img src="img/hyperwatch-vitals.webp" width="760" height="760" loading="lazy" decoding="async"
-                   alt="HyperWatch OLED showing live vitals: heart rate 68.2 bpm, HRV, SpO2 98.1 percent, temperature 36.7 C." />
-              <figcaption>LIVE VITALS</figcaption>
-            </figure>
-            <figure>
-              <img src="img/hyperwatch-model.webp" width="760" height="760" loading="lazy" decoding="async"
-                   alt="HyperWatch OLED showing model diagnostics: int8 MLP 13-16-8-6, 41 microsecond inference." />
-              <figcaption>MODEL DIAGNOSTICS</figcaption>
-            </figure>
-          </div>
-
-          <div class="card-body">
-            <div class="card-top">
-              <span class="card-idx">[01]</span>
-              <span class="card-badge">NASA SPACE APPS 2026</span>
-            </div>
-            <h3>HyperWatch</h3>
-            <p>
-              A wearable astronaut health monitor running a <strong>13&rarr;16&rarr;8&rarr;6 int8 risk
-              model</strong> on an ESP32-S3. Five NASA-mapped risk domains, a cardiac-event flag,
-              mission context, OLED pages and NVS persistence, with the same model
-              compiled for the web dashboard.
-            </p>
-            <ul class="tags">
-              <li>ESP32-S3</li><li>int8 MLP</li><li>PPG</li><li>NVS</li><li>WASM</li>
-            </ul>
-            <div class="card-links">
-              <a href="https://github.com/HyperLife26/HyperWatch" target="_blank" rel="noopener">Repository</a>
-              <a href="https://hyperlife.health" target="_blank" rel="noopener">Live site</a>
-            </div>
-          </div>
-        </article>
-
         <!-- ParoClaw -->
         <article class="card reveal">
           <div class="card-media">
@@ -1615,7 +1531,7 @@
           </div>
           <div class="card-body">
             <div class="card-top">
-              <span class="card-idx">[02]</span>
+              <span class="card-idx">[01]</span>
               <span class="card-badge jelly">LOCAL AGENT</span>
             </div>
             <h3>ParoClaw</h3>
@@ -1633,8 +1549,40 @@
             </div>
           </div>
         </article>
-
-        <!-- EM2M -->
+        <!-- Vacuum Plasma Chamber -->
+        <article class="card reveal">
+          <div class="card-media">
+            <img src="img/vacuum-plasma.webp" width="760" height="475" loading="lazy" decoding="async"
+                 alt="Glowing purple plasma discharge inside the hand-built low-pressure vacuum chamber." />
+            <figcaption>DISCHARGE, LOW PRESSURE</figcaption>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <span class="card-idx">[02]</span>
+              <span class="card-badge coral">HV / VACUUM</span>
+            </div>
+            <h3>Vacuum Plasma Chamber</h3>
+            <p>
+              A low-pressure plasma chamber built from scratch to study <strong>vacuum systems,
+              high-voltage electronics and plasma formation</strong>. Designed and assembled the
+              chamber, tested fittings and seals, built custom feedthroughs, and integrated a
+              pump and gauge before experimenting with discharge in air and under vacuum.
+            </p>
+            <ul class="card-list">
+              <li>How plasma behaves under reduced pressure</li>
+              <li>How electrode geometry affects discharge</li>
+              <li>Vacuum sealing and leak testing</li>
+              <li>Practical limits of HV systems and custom hardware</li>
+            </ul>
+            <ul class="tags">
+              <li>Vacuum</li><li>HV</li><li>Plasma</li><li>Feedthroughs</li>
+            </ul>
+            <div class="card-links">
+              <a href="https://lnkd.in/p/d5eVijbx" target="_blank" rel="noopener">Project write-up</a>
+            </div>
+          </div>
+        </article>
+        <!-- EM2M ESP32 Modbus -->
         <article class="card reveal">
           <div class="card-media">
             <img src="img/em2m.webp" width="760" height="475" loading="lazy" decoding="async"
@@ -1660,8 +1608,36 @@
             </div>
           </div>
         </article>
+        <!-- HyperWatch -->
+        <article class="card reveal">
+          <div class="card-media">
+            <img src="img/hyperwatch-vitals.webp" width="760" height="475" loading="lazy" decoding="async"
+                 alt="HyperWatch OLED showing live vitals: heart rate 68.2 bpm, HRV, SpO2 98.1 percent, temperature 36.7 C." />
+            <figcaption>LIVE VITALS</figcaption>
+          </div>
 
-        <!-- Tunnel fan -->
+          <div class="card-body">
+            <div class="card-top">
+              <span class="card-idx">[04]</span>
+              <span class="card-badge">NASA SPACE APPS 2026</span>
+            </div>
+            <h3>HyperWatch</h3>
+            <p>
+              A wearable astronaut health monitor running a <strong>13&rarr;16&rarr;8&rarr;6 int8 risk
+              model</strong> on an ESP32-S3. Five NASA-mapped risk domains, a cardiac-event flag,
+              mission context, OLED pages and NVS persistence, with the same model
+              compiled for the web dashboard.
+            </p>
+            <ul class="tags">
+              <li>ESP32-S3</li><li>int8 MLP</li><li>PPG</li><li>NVS</li><li>WASM</li>
+            </ul>
+            <div class="card-links">
+              <a href="https://github.com/HyperLife26/HyperWatch" target="_blank" rel="noopener">Repository</a>
+              <a href="https://hyperlife.health" target="_blank" rel="noopener">Live site</a>
+            </div>
+          </div>
+        </article>
+        <!-- AI Tunnel Fan -->
         <article class="card reveal">
           <div class="card-media">
             <img src="img/tunnel-fan.webp" width="760" height="486" loading="lazy" decoding="async"
@@ -1670,7 +1646,7 @@
           </div>
           <div class="card-body">
             <div class="card-top">
-              <span class="card-idx">[04]</span>
+              <span class="card-idx">[05]</span>
               <span class="card-badge">TINYML</span>
             </div>
             <h3>AI Tunnel Fan</h3>
@@ -1687,8 +1663,7 @@
             </div>
           </div>
         </article>
-
-        <!-- EV BMS -->
+        <!-- AI EV BMS -->
         <article class="card reveal">
           <div class="card-media">
             <img src="img/ev-bms.webp" width="760" height="520" loading="lazy" decoding="async"
@@ -1697,7 +1672,7 @@
           </div>
           <div class="card-body">
             <div class="card-top">
-              <span class="card-idx">[05]</span>
+              <span class="card-idx">[06]</span>
               <span class="card-badge">EDGE AI</span>
             </div>
             <h3>AI EV BMS</h3>
@@ -1714,42 +1689,7 @@
             </div>
           </div>
         </article>
-
-        <!-- Vacuum plasma -->
-        <article class="card reveal">
-          <div class="card-media">
-            <img src="img/vacuum-plasma.webp" width="760" height="475" loading="lazy" decoding="async"
-                 alt="Glowing purple plasma discharge inside the hand-built low-pressure vacuum chamber." />
-            <figcaption>DISCHARGE, LOW PRESSURE</figcaption>
-          </div>
-          <div class="card-body">
-            <div class="card-top">
-              <span class="card-idx">[06]</span>
-              <span class="card-badge coral">HV / VACUUM</span>
-            </div>
-            <h3>Vacuum Plasma Chamber</h3>
-            <p>
-              A low-pressure plasma chamber built from scratch to study <strong>vacuum systems,
-              high-voltage electronics and plasma formation</strong>. Designed and assembled the
-              chamber, tested fittings and seals, built custom feedthroughs, and integrated a
-              pump and gauge before experimenting with discharge in air and under vacuum.
-            </p>
-            <ul class="card-list">
-              <li>How plasma behaves under reduced pressure</li>
-              <li>How electrode geometry affects discharge</li>
-              <li>Vacuum sealing and leak testing</li>
-              <li>Practical limits of HV systems and custom hardware</li>
-            </ul>
-            <ul class="tags">
-              <li>Vacuum</li><li>HV</li><li>Plasma</li><li>Feedthroughs</li>
-            </ul>
-            <div class="card-links">
-              <a href="https://lnkd.in/p/d5eVijbx" target="_blank" rel="noopener">Project write-up</a>
-            </div>
-          </div>
-        </article>
-
-        <!-- RPi camera -->
+        <!-- Headless Pi Camera -->
         <article class="card reveal">
           <div class="card-media">
             <img src="img/pi-camera.webp" width="760" height="643" loading="lazy" decoding="async"
@@ -1775,8 +1715,7 @@
             </div>
           </div>
         </article>
-
-        <!-- Semi-humanoid -->
+        <!-- Semi-Humanoid -->
         <article class="card reveal">
           <div class="card-media">
             <img src="img/semi-humanoid.webp" width="760" height="475" loading="lazy" decoding="async"
@@ -1803,8 +1742,7 @@
             </div>
           </div>
         </article>
-
-        <!-- Mobile manipulator -->
+        <!-- Mobile Manipulator -->
         <article class="card reveal">
           <div class="card-media">
             <img src="img/mobile-manipulator.webp" width="760" height="475" loading="lazy" decoding="async"
@@ -1831,6 +1769,7 @@
             </div>
           </div>
         </article>
+
         </div>
       </div>
     </div>
