@@ -24,7 +24,7 @@ Total payload is roughly 60 KB of HTML plus ~300 KB of photos.
 |---|---|
 | Surface | Name, tagline, status chips, links |
 | 01 Dive log | Biography, spec sheet, wide bench band |
-| 02 The wrecks | Seven project cards (HyperWatch, ParoClaw, EM2M, AI Tunnel Fan, AI EV BMS, Vacuum Plasma Chamber, Pi Camera) |
+| 02 The wrecks | Nine project cards (HyperWatch, ParoClaw, EM2M, AI Tunnel Fan, AI EV BMS, Vacuum Plasma Chamber, Pi Camera, Semi-Humanoid, Mobile Manipulator) |
 | 03 Cargo hold | Languages, embedded, edge AI, connectivity, bench skills |
 | Seafloor | Contact links (LinkedIn, GitHub, ORCID) and colophon |
 

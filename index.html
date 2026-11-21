@@ -1416,9 +1416,9 @@
         <span class="depth-tag">&minus; 1 200 m</span>
       </div>
       <p class="section-sub reveal" style="margin-bottom:32px">
-        Seven builds recovered from the bench: wearables, industrial telemetry, predictive
-        maintenance, local AI and a hand-built plasma chamber. Every one of them ran on
-        hardware I could hold.
+        Nine builds recovered from the bench: wearables, industrial telemetry, predictive
+        maintenance, local AI, two robots and a hand-built plasma chamber. Every one of them
+        ran on hardware I could hold.
       </p>
 
       <div class="cards">
@@ -1625,6 +1625,62 @@
             </ul>
             <div class="card-links">
               <a href="https://github.com/dhruvkotian/rpi-camera" target="_blank" rel="noopener">Repository</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Semi-humanoid -->
+        <article class="card reveal">
+          <div class="card-media">
+            <img src="img/semi-humanoid.webp" width="760" height="475" loading="lazy" decoding="async"
+                 alt="Semi-humanoid robot with a round white head, a display face showing green eyes and a camera below it, over a black torso." />
+            <figcaption>FACE + HAND TRACKING</figcaption>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <span class="card-idx">[08]</span>
+              <span class="card-badge">ROBOTICS</span>
+            </div>
+            <h3>Semi-Humanoid</h3>
+            <p>
+              A head-and-torso robot that watches the person in front of it through a
+              Raspberry Pi camera. <strong>MediaPipe tracks the hand</strong>, finger states
+              become commands, and the same gesture drives the hand servos, a GlowBit matrix,
+              keyboard shortcuts or speech. It shakes hands on cue.
+            </p>
+            <ul class="tags">
+              <li>Raspberry Pi</li><li>MediaPipe</li><li>OpenCV</li><li>Servos</li><li>gTTS</li>
+            </ul>
+            <div class="card-links">
+              <a href="https://github.com/dhruvkotian/semi-humanoid" target="_blank" rel="noopener">Repository</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Mobile manipulator -->
+        <article class="card reveal">
+          <div class="card-media">
+            <img src="img/mobile-manipulator.webp" width="760" height="475" loading="lazy" decoding="async"
+                 alt="Four-wheeled rover on concrete with a raised servo arm ending in a metal gripper claw, wiring and an ESP32 board on the chassis." />
+            <figcaption>ROVER + TELEOP</figcaption>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <span class="card-idx">[09]</span>
+              <span class="card-badge jelly">TELEOP</span>
+            </div>
+            <h3>Mobile Manipulator</h3>
+            <p>
+              A four-wheel rover with a <strong>five-servo arm and gripper claw</strong>, driven
+              by a handheld ESP32-S3 controller with two joysticks and an OLED. The rover raises
+              its own Wi-Fi access point, takes authenticated 17-byte UDP commands at 25 Hz and
+              stops the motors if the link goes quiet for 300 ms.
+            </p>
+            <ul class="tags">
+              <li>ESP32</li><li>ESP32-S3</li><li>UDP</li><li>Servos</li><li>L298N</li>
+            </ul>
+            <div class="card-links">
+              <a href="https://github.com/dhruvkotian/mobile-manipulator" target="_blank" rel="noopener">Repository</a>
             </div>
           </div>
         </article>
