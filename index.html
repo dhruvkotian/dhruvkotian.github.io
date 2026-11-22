@@ -381,6 +381,22 @@
     background: rgba(2, 14, 22, .6);
   }
 
+  /* plain-language label that pairs with the themed section name */
+  .section-label {
+    font-size: 1.12rem;
+    line-height: 1;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--foam);
+    opacity: .78;
+  }
+
+  .section-label::before {
+    content: "/";
+    margin-right: .5em;
+    color: var(--biolum);
+  }
+
   .section-sub {
     margin: 0;
     color: var(--ink-dim);
@@ -893,6 +909,16 @@
      slide's peek would read as empty space */
   .cards .reveal { opacity: 1; transform: none; }
 
+  /* research cards are a static grid, not part of the deck */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .card-grid .card { height: 100%; }
+
   @media (max-width: 720px) {
     .rail-bar { justify-content: flex-start; }
     .rail-hint, .rail-dots { display: none; }
@@ -1318,9 +1344,10 @@
   <div class="wrap">
     <a class="brand" href="#top">DK<span>://</span>DIVE</a>
     <nav class="nav-links" aria-label="Primary">
-      <a href="#about">Dive log</a>
-      <a href="#projects">Wrecks</a>
-      <a href="#stack">Cargo</a>
+      <a href="#about">About</a>
+      <a href="#projects">Projects</a>
+      <a href="#research">Research</a>
+      <a href="#stack">Technical skills</a>
       <a class="btn-mini" href="https://www.linkedin.com/in/dhruvkotian/" target="_blank" rel="noopener">LinkedIn &#8599;</a>
       <a class="btn-mini" href="https://github.com/dhruvkotian" target="_blank" rel="noopener">GitHub &#8599;</a>
     </nav>
@@ -1406,7 +1433,7 @@
         </ul>
 
         <div class="cta">
-          <a class="btn btn-primary" href="#projects">View the wrecks</a>
+          <a class="btn btn-primary" href="#projects">View projects</a>
           <a class="btn btn-ghost" href="https://github.com/dhruvkotian" target="_blank" rel="noopener">GitHub &#8599;</a>
         </div>
 
@@ -1433,6 +1460,7 @@
       <div class="section-head reveal">
         <span class="section-num">01</span>
         <h2>Dive log</h2>
+        <span class="section-label">About</span>
         <span class="depth-tag">&minus; 240 m</span>
       </div>
 
@@ -1499,12 +1527,12 @@
       <div class="section-head reveal">
         <span class="section-num">02</span>
         <h2>The wrecks</h2>
+        <span class="section-label">Projects</span>
         <span class="depth-tag">&minus; 1 200 m</span>
       </div>
       <p class="section-sub reveal" style="margin-bottom:32px">
-        Nine builds recovered from the bench: wearables, industrial telemetry, predictive
-        maintenance, local AI, two robots and a hand-built plasma chamber. Every one of them
-        ran on hardware I could hold.
+        Eight builds recovered from the bench: wearables, industrial telemetry, predictive
+        maintenance, local AI and two robots. Every one of them ran on hardware I could hold.
       </p>
 
       <div class="rail-bar reveal">
@@ -1549,39 +1577,6 @@
             </div>
           </div>
         </article>
-        <!-- Vacuum Plasma Chamber -->
-        <article class="card reveal">
-          <div class="card-media">
-            <img src="img/vacuum-plasma.webp" width="760" height="475" loading="lazy" decoding="async"
-                 alt="Glowing purple plasma discharge inside the hand-built low-pressure vacuum chamber." />
-            <figcaption>DISCHARGE, LOW PRESSURE</figcaption>
-          </div>
-          <div class="card-body">
-            <div class="card-top">
-              <span class="card-idx">[02]</span>
-              <span class="card-badge coral">HV / VACUUM</span>
-            </div>
-            <h3>Vacuum Plasma Chamber</h3>
-            <p>
-              A low-pressure plasma chamber built from scratch to study <strong>vacuum systems,
-              high-voltage electronics and plasma formation</strong>. Designed and assembled the
-              chamber, tested fittings and seals, built custom feedthroughs, and integrated a
-              pump and gauge before experimenting with discharge in air and under vacuum.
-            </p>
-            <ul class="card-list">
-              <li>How plasma behaves under reduced pressure</li>
-              <li>How electrode geometry affects discharge</li>
-              <li>Vacuum sealing and leak testing</li>
-              <li>Practical limits of HV systems and custom hardware</li>
-            </ul>
-            <ul class="tags">
-              <li>Vacuum</li><li>HV</li><li>Plasma</li><li>Feedthroughs</li>
-            </ul>
-            <div class="card-links">
-              <a href="https://lnkd.in/p/d5eVijbx" target="_blank" rel="noopener">Project write-up</a>
-            </div>
-          </div>
-        </article>
         <!-- EM2M ESP32 Modbus -->
         <article class="card reveal">
           <div class="card-media">
@@ -1591,7 +1586,7 @@
           </div>
           <div class="card-body">
             <div class="card-top">
-              <span class="card-idx">[03]</span>
+              <span class="card-idx">[02]</span>
               <span class="card-badge sun">INDUSTRIAL</span>
             </div>
             <h3>EM2M ESP32 Modbus</h3>
@@ -1618,15 +1613,14 @@
 
           <div class="card-body">
             <div class="card-top">
-              <span class="card-idx">[04]</span>
+              <span class="card-idx">[03]</span>
               <span class="card-badge">NASA SPACE APPS 2026</span>
             </div>
             <h3>HyperWatch</h3>
             <p>
-              A wearable astronaut health monitor running a <strong>13&rarr;16&rarr;8&rarr;6 int8 risk
-              model</strong> on an ESP32-S3. Five NASA-mapped risk domains, a cardiac-event flag,
-              mission context, OLED pages and NVS persistence, with the same model
-              compiled for the web dashboard.
+              <strong>HyperWatch:</strong> An ESP32-S3 astronaut health-monitoring research
+              prototype developed for NASA Space Apps 2026, featuring on-device quantised
+              inference and mission-aware risk assessment.
             </p>
             <ul class="tags">
               <li>ESP32-S3</li><li>int8 MLP</li><li>PPG</li><li>NVS</li><li>WASM</li>
@@ -1646,7 +1640,7 @@
           </div>
           <div class="card-body">
             <div class="card-top">
-              <span class="card-idx">[05]</span>
+              <span class="card-idx">[04]</span>
               <span class="card-badge">TINYML</span>
             </div>
             <h3>AI Tunnel Fan</h3>
@@ -1672,7 +1666,7 @@
           </div>
           <div class="card-body">
             <div class="card-top">
-              <span class="card-idx">[06]</span>
+              <span class="card-idx">[05]</span>
               <span class="card-badge">EDGE AI</span>
             </div>
             <h3>AI EV BMS</h3>
@@ -1698,7 +1692,7 @@
           </div>
           <div class="card-body">
             <div class="card-top">
-              <span class="card-idx">[07]</span>
+              <span class="card-idx">[06]</span>
               <span class="card-badge sun">LINUX</span>
             </div>
             <h3>Headless Pi Camera</h3>
@@ -1724,7 +1718,7 @@
           </div>
           <div class="card-body">
             <div class="card-top">
-              <span class="card-idx">[08]</span>
+              <span class="card-idx">[07]</span>
               <span class="card-badge">ROBOTICS</span>
             </div>
             <h3>Semi-Humanoid</h3>
@@ -1751,7 +1745,7 @@
           </div>
           <div class="card-body">
             <div class="card-top">
-              <span class="card-idx">[09]</span>
+              <span class="card-idx">[08]</span>
               <span class="card-badge jelly">TELEOP</span>
             </div>
             <h3>Mobile Manipulator</h3>
@@ -1775,12 +1769,131 @@
     </div>
   </section>
 
+  <!-- ================= RESEARCH ================= -->
+  <section class="section" id="research">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">03</span>
+        <h2>Research &amp; Experiments</h2>
+        <span class="depth-tag">&minus; 1 800 m</span>
+      </div>
+      <p class="section-sub reveal" style="margin-bottom:32px">
+        Open-ended bench work: hardware still being characterised rather than shipped. A
+        hand-built vacuum chamber, a Linux bring-up on the ESP32-S3, and a vibration monitor
+        that runs its own dashboard.
+      </p>
+
+      <div class="card-grid">
+        <!-- Vacuum Plasma Chamber -->
+        <article class="card reveal">
+          <div class="card-media">
+            <img src="img/vacuum-plasma.webp" width="760" height="475" loading="lazy" decoding="async"
+                 alt="Glowing purple plasma discharge inside the hand-built low-pressure vacuum chamber." />
+            <figcaption>DISCHARGE, LOW PRESSURE</figcaption>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <span class="card-idx">[01]</span>
+              <span class="card-badge coral">HV / VACUUM</span>
+            </div>
+            <h3>Vacuum Plasma Chamber</h3>
+            <p>
+              A low-pressure plasma chamber built from scratch to study <strong>vacuum systems,
+              high-voltage electronics and plasma formation</strong>. Designed and assembled the
+              chamber, tested fittings and seals, built custom feedthroughs, and integrated a
+              pump and gauge before experimenting with discharge in air and under vacuum.
+            </p>
+            <ul class="card-list">
+              <li>How plasma behaves under reduced pressure</li>
+              <li>How electrode geometry affects discharge</li>
+              <li>Vacuum sealing and leak testing</li>
+              <li>Practical limits of HV systems and custom hardware</li>
+            </ul>
+            <ul class="tags">
+              <li>Vacuum</li><li>HV</li><li>Plasma</li><li>Feedthroughs</li>
+            </ul>
+            <div class="card-links">
+              <a href="https://lnkd.in/p/d5eVijbx" target="_blank" rel="noopener">Project write-up</a>
+            </div>
+          </div>
+        </article>
+        <!-- ESP32-S3 native Linux SDMMC -->
+        <article class="card reveal">
+          <div class="card-media">
+            <img src="img/esp32s3-linux.webp" width="760" height="475" loading="lazy" decoding="async"
+                 alt="ESP32-S3 board running Linux with a small TFT console showing a kernel message, lit by blue LEDs." />
+            <figcaption>S3 RUNNING LINUX</figcaption>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <span class="card-idx">[02]</span>
+              <span class="card-badge sun">KERNEL</span>
+            </div>
+            <h3>ESP32-S3 Native Linux SDMMC</h3>
+            <p>
+              Bringing up Linux on the ESP32-S3 with a <strong>native SDMMC driver</strong>
+              instead of a bit-banged SPI path. Custom kernel driver work, Device Tree,
+              Buildroot integration and hardware validation, from the first probe to a
+              mounted card.
+            </p>
+            <ul class="card-list">
+              <li>Custom SDMMC driver and Device Tree nodes</li>
+              <li>Buildroot image and boot flow</li>
+              <li>Card enumeration, block I/O and mount</li>
+              <li>Bench validation on the S3 dev board</li>
+            </ul>
+            <ul class="tags">
+              <li>Linux kernel</li><li>SDMMC</li><li>Device Tree</li><li>Buildroot</li>
+            </ul>
+            <div class="card-links">
+              <a href="https://github.com/dhruvkotian/esp32s3-linux-sdmmc" target="_blank" rel="noopener">Repository</a>
+            </div>
+          </div>
+        </article>
+        <!-- DC Fan Vibration Monitor -->
+        <article class="card reveal">
+          <div class="card-media">
+            <img src="img/dc-fan.webp" width="760" height="475" loading="lazy" decoding="async"
+                 alt="Local dashboard across three screens: abnormal status with RMS metrics, time-domain and FFT charts, and an RMS trend against baseline limits." />
+            <figcaption>LOCAL DASHBOARD</figcaption>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <span class="card-idx">[03]</span>
+              <span class="card-badge coral">MONITORING</span>
+            </div>
+            <h3>DC Fan Vibration Monitor</h3>
+            <p>
+              An ESP32-S3 and MPU6050 rig that samples a cooling fan at up to <strong>1 kHz</strong>,
+              computes per-axis RMS and an FFT on the board, and serves a local dashboard with
+              the waveform, spectrum and a baseline anomaly check. The healthy reference is
+              captured at boot and kept in RAM.
+            </p>
+            <ul class="card-list">
+              <li>Up to 1 kHz MPU6050 capture over I2C</li>
+              <li>Per-axis RMS and total vector RMS</li>
+              <li>Hann-windowed FFT and dominant peak on-device</li>
+              <li>Boot baseline, local dashboard and JSON API</li>
+            </ul>
+            <ul class="tags">
+              <li>ESP32-S3</li><li>MPU6050</li><li>FFT</li><li>Baseline</li><li>Web dashboard</li>
+            </ul>
+            <div class="card-links">
+              <a href="https://github.com/dhruvkotian/dc-fan-vibration-monitor" target="_blank" rel="noopener">Repository</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= STACK ================= -->
   <section class="section" id="stack">
     <div class="wrap">
       <div class="section-head reveal">
-        <span class="section-num">03</span>
+        <span class="section-num">04</span>
         <h2>Cargo hold</h2>
+        <span class="section-label">Technical skills</span>
         <span class="depth-tag">&minus; 2 600 m</span>
       </div>
 
