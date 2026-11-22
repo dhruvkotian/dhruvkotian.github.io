@@ -18,6 +18,8 @@ A single hand-written `index.html` with inline CSS and JavaScript:
 - **Themed sections carry a plain-language label** next to the heading (`Dive log / About`, `The wrecks / Projects`, `Cargo hold / Technical skills`), and the nav uses the plain terms. In space, the creative headings become `Flight log`, `The derelicts` and `Cargo bay`.
 - **The wrecks and Research & Experiments are sliding decks**: each is a flex rail with `scroll-snap-type: x mandatory`, so it swipes on touch, scrolls on a trackpad, drags with a mouse, and steps with the arrow buttons, arrow keys or the dot row. One small initialiser drives both decks. No library, no per-frame JavaScript.
 - Inline SVG pixel art: ocean sun, clouds, sailboat, coral and anglerfish; space planet, moon, satellite, rocket, lander and flag.
+- Scroll work is deliberately small: layout is measured only on load, resize and theme change; the handler updates just the visible theme's layers; text and nav classes only change when their values change.
+- Backgrounds are static gradients. Motion is limited to transform and opacity, so the browser can composite it instead of repainting the starfield.
 - Photographs are local `webp` files in `img/`, 760 px wide (1800 px for the wide bench band), lazy-loaded.
 - Two Google fonts (`Press Start 2P`, `VT323`); everything degrades to system monospace.
 

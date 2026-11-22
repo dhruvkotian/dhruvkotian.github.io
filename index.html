@@ -71,7 +71,7 @@
     font-size: 20px;
     line-height: 1.45;
     overflow-x: hidden;
-    text-rendering: geometricPrecision;
+    overflow-x: clip;
   }
 
   a { color: inherit; }
@@ -108,6 +108,7 @@
     overflow: hidden;
     pointer-events: none;
     background: var(--sea-base);
+    contain: paint;
   }
 
   /* --- space background: fixed starfield + nebula ------------------ */
@@ -120,16 +121,15 @@
     pointer-events: none;
     background:
       radial-gradient(ellipse 120% 85% at 72% -12%, #1b1949 0%, #0b0b28 44%, #06061a 100%);
+    contain: paint;
   }
 
   html[data-theme="space"] .space { display: block; }
   html[data-theme="space"] .sea { display: none; }
 
-  .space-layer,
-  .stars {
+  .space-layer {
     position: absolute;
-    inset: -6%;
-    will-change: opacity, transform;
+    inset: 0;
   }
 
   .nebula-a {
@@ -137,19 +137,12 @@
       radial-gradient(ellipse 52% 40% at 78% 10%, rgba(185, 165, 255, .28), transparent 62%),
       radial-gradient(ellipse 42% 34% at 18% 40%, rgba(255, 110, 199, .15), transparent 66%),
       radial-gradient(ellipse 46% 32% at 62% 76%, rgba(109, 216, 255, .11), transparent 70%);
-    animation: nebula 34s ease-in-out infinite alternate;
   }
 
   .nebula-b {
     background:
       radial-gradient(ellipse 58% 42% at 32% 92%, rgba(121, 247, 176, .08), transparent 70%),
       radial-gradient(ellipse 44% 30% at 90% 60%, rgba(255, 210, 74, .07), transparent 70%);
-    animation: nebula 46s ease-in-out infinite alternate-reverse;
-  }
-
-  @keyframes nebula {
-    from { opacity: .7; transform: scale(1); }
-    to   { opacity: 1;  transform: scale(1.05); }
   }
 
   .space-haze {
@@ -160,8 +153,10 @@
   }
 
   .stars {
+    position: absolute;
     inset: -22% 0;
     background-repeat: repeat;
+    will-change: opacity, transform;
   }
 
   .stars-far {
@@ -174,7 +169,6 @@
       radial-gradient(1px 1px at 252px 42px, rgba(255, 154, 216, .55) 50%, transparent 51%);
     background-size: 280px 280px;
     opacity: .75;
-    animation: star-drift 90s linear infinite;
   }
 
   .stars-near {
@@ -186,7 +180,6 @@
       radial-gradient(2px 2px at 388px 58px, rgba(255, 210, 74, .6) 50%, transparent 51%);
     background-size: 460px 460px;
     opacity: .8;
-    animation: star-drift-near 70s linear infinite reverse;
   }
 
   .stars-bright {
@@ -197,24 +190,7 @@
       radial-gradient(2px 2px at 500px 220px, #6dd8ff 50%, transparent 51%),
       radial-gradient(2px 2px at 400px 420px, #fff 50%, transparent 51%);
     background-size: 620px 620px;
-    animation:
-      star-twinkle 6s steps(2, end) infinite,
-      star-drift-bright 120s linear infinite;
-  }
-
-  @keyframes star-drift {
-    from { background-position: 0 0; }
-    to   { background-position: 0 280px; }
-  }
-
-  @keyframes star-drift-near {
-    from { background-position: 0 0; }
-    to   { background-position: 0 460px; }
-  }
-
-  @keyframes star-drift-bright {
-    from { background-position: 0 0; }
-    to   { background-position: 0 620px; }
+    animation: star-twinkle 6s steps(2, end) infinite;
   }
 
   @keyframes star-twinkle {
@@ -279,12 +255,6 @@
         rgba(220, 255, 255, 0) 26px 150px);
     -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 72%);
     mask-image: linear-gradient(180deg, #000 0%, transparent 72%);
-    animation: rays 24s ease-in-out infinite alternate;
-  }
-
-  @keyframes rays {
-    from { transform: translateX(-14px) skewX(0deg); opacity: .85; }
-    to   { transform: translateX(14px) skewX(1.5deg); opacity: 1; }
   }
 
   /* rising bubbles + marine snow */
@@ -300,12 +270,6 @@
     background-size: 460px 460px;
     animation: rise 34s linear infinite;
     opacity: .8;
-  }
-
-  .bubbles.slow {
-    background-size: 680px 680px;
-    animation-duration: 58s;
-    opacity: .5;
   }
 
   @keyframes rise {
@@ -412,9 +376,8 @@
   }
 
   .nav--deep {
-    background: rgba(2, 10, 18, .84);
+    background: rgba(2, 10, 18, .88);
     border-bottom-color: rgba(126, 249, 255, .2);
-    backdrop-filter: blur(6px);
   }
 
   .nav .wrap {
@@ -1736,7 +1699,6 @@
   <div class="sea-layer l-surface" data-layer="surface"></div>
   <div class="sea-layer l-sunrays" data-layer="rays"></div>
   <div class="bubbles" data-layer="bubbles"></div>
-  <div class="bubbles slow"></div>
   <div class="fish-school" data-layer="fish" aria-hidden="true">
     <svg class="fish" viewBox="0 0 18 12" shape-rendering="crispEdges" style="--top:16%;--size:34px;--tint:#7ef9ff;--fade:.5;--dur:68s;--delay:-12s;--bob-delay:-1s"><use href="#px-fish"/></svg>
     <svg class="fish fish--left" viewBox="0 0 18 12" shape-rendering="crispEdges" style="--top:31%;--size:52px;--tint:#9ff5e4;--fade:.38;--dur:96s;--delay:-55s;--bob-delay:-3s"><use href="#px-fish"/></svg>
@@ -2703,45 +2665,84 @@
     function setOpacity(el, v) { if (el) el.style.opacity = v.toFixed(3); }
 
     var ticking = false;
+    var maxScroll = 0;
+    var viewportH = 0;
+    var lastP = -1;
+    var lastSpace = null;
+    var lastAmount = -1;
+    var lastGaugeSpace = null;
+    var navDeep = null;
+    var gaugeVisible = true;
+    var nf = null;
+    var gaugeMQ = window.matchMedia ? window.matchMedia('(min-width: 1340px)') : null;
 
-    function update() {
-      var max = doc.scrollHeight - doc.clientHeight;
-      var p = max > 0 ? clamp(doc.scrollTop / max, 0, 1) : 0;
+    try { nf = new Intl.NumberFormat('en-US'); } catch (e) {}
+
+    if (gaugeMQ) {
+      gaugeVisible = gaugeMQ.matches;
+      var onGauge = function (e) { gaugeVisible = e.matches; update(true); };
+      if (gaugeMQ.addEventListener) gaugeMQ.addEventListener('change', onGauge);
+      else if (gaugeMQ.addListener) gaugeMQ.addListener(onGauge);
+    }
+
+    function measure() {
+      maxScroll = doc.scrollHeight - doc.clientHeight;
+      viewportH = doc.clientHeight;
+    }
+
+    function update(force) {
+      var p = maxScroll > 0 ? clamp(doc.scrollTop / maxScroll, 0, 1) : 0;
       var space = doc.getAttribute('data-theme') === 'space';
+
+      if (!force && p === lastP && space === lastSpace) {
+        ticking = false;
+        return;
+      }
+      lastP = p;
+      lastSpace = space;
 
       if (bar) bar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
 
-      // depth layers
-      setOpacity(layers.surface, 1 - ramp(p, .03, .15));
-      setOpacity(layers.rays, 1 - ramp(p, .01, .09));
-      setOpacity(layers.mid, ramp(p, .005, .05) * (1 - ramp(p, .52, .74)));
-      setOpacity(layers.deep, ramp(p, .30, .48) * (1 - ramp(p, .70, .90)));
-      setOpacity(layers.abyss, ramp(p, .62, .86));
-      if (layers.bubbles) layers.bubbles.style.opacity = (0.85 - p * 0.55).toFixed(3);
-      setOpacity(layers.fish, ramp(p, .02, .12) * (1 - ramp(p, .72, 1) * .3));
-
-      // star layers drift apart as the page climbs toward orbit
-      if (space) {
+      // only touch the layers for the theme that is actually visible
+      if (!space) {
+        setOpacity(layers.surface, 1 - ramp(p, .03, .15));
+        setOpacity(layers.rays, 1 - ramp(p, .01, .09));
+        setOpacity(layers.mid, ramp(p, .005, .05) * (1 - ramp(p, .52, .74)));
+        setOpacity(layers.deep, ramp(p, .30, .48) * (1 - ramp(p, .70, .90)));
+        setOpacity(layers.abyss, ramp(p, .62, .86));
+        if (layers.bubbles) layers.bubbles.style.opacity = (0.85 - p * 0.55).toFixed(3);
+        setOpacity(layers.fish, ramp(p, .02, .12) * (1 - ramp(p, .72, 1) * .3));
+      } else {
         if (stars.far) stars.far.style.transform = 'translate3d(0,' + (-p * 22).toFixed(1) + 'px,0)';
         if (stars.near) stars.near.style.transform = 'translate3d(0,' + (-p * 54).toFixed(1) + 'px,0)';
         if (stars.bright) stars.bright.style.transform = 'translate3d(0,' + (-p * 96).toFixed(1) + 'px,0)';
-      } else {
-        if (stars.far) stars.far.style.transform = '';
-        if (stars.near) stars.near.style.transform = '';
-        if (stars.bright) stars.bright.style.transform = '';
       }
 
       // gauge: metres below the surface, or kilometres above it
-      if (gauge) gauge.style.setProperty('--d', p.toFixed(4));
-      if (gaugeUnit) gaugeUnit.textContent = space ? 'km' : 'm';
-      if (gaugeLabel) gaugeLabel.textContent = space ? 'ALT' : 'DEPTH';
-      if (depthVal) {
-        var amount = Math.round(p * (space ? 420 : 3800));
-        depthVal.textContent = amount.toLocaleString('en-US');
+      if (gaugeVisible) {
+        if (gauge) gauge.style.setProperty('--d', p.toFixed(4));
+
+        var unit = space ? 'km' : 'm';
+        var label = space ? 'ALT' : 'DEPTH';
+        if (gaugeUnit && gaugeUnit.textContent !== unit) gaugeUnit.textContent = unit;
+        if (gaugeLabel && gaugeLabel.textContent !== label) gaugeLabel.textContent = label;
+
+        if (depthVal) {
+          var amount = Math.round(p * (space ? 420 : 3800));
+          if (force || amount !== lastAmount || space !== lastGaugeSpace) {
+            depthVal.textContent = nf ? nf.format(amount) : String(amount);
+            lastAmount = amount;
+            lastGaugeSpace = space;
+          }
+        }
       }
 
       // nav goes dark once we leave the surface
-      if (nav) nav.classList.toggle('nav--deep', doc.scrollTop > window.innerHeight * 0.5);
+      var deep = doc.scrollTop > viewportH * 0.5;
+      if (nav && deep !== navDeep) {
+        nav.classList.toggle('nav--deep', deep);
+        navDeep = deep;
+      }
 
       ticking = false;
     }
@@ -2753,10 +2754,33 @@
       }
     }
 
-    document.addEventListener('dk:theme', update);
+    function refresh() {
+      measure();
+      update(true);
+    }
+
+    var resizeTick = false;
+
+    document.addEventListener('dk:theme', refresh);
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    update();
+    window.addEventListener('resize', function () {
+      measure();
+      if (!resizeTick) {
+        resizeTick = true;
+        window.requestAnimationFrame(function () {
+          resizeTick = false;
+          update(true);
+        });
+      }
+    }, { passive: true });
+    window.addEventListener('load', refresh);
+
+    if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+      document.fonts.ready.then(refresh);
+    }
+
+    measure();
+    update(true);
   })();
 
   // ---------------------------------------------------------------
