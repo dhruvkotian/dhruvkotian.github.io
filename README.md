@@ -9,16 +9,19 @@ Live at **https://dhruvkotian.dev**
 A single hand-written `index.html` with inline CSS and JavaScript:
 
 - No frameworks, no build step, no trackers.
-- **Pixel ocean theme** that descends with scroll: bright surface water, then mid-water, deep, and abyss. Five stacked CSS gradient layers are cross-faded from `scrollTop`, with a fixed depth gauge on wide screens.
+- **Two switchable pixel themes**, remembered in `localStorage` and applied before first paint:
+  - **Ocean** (default): descends with scroll from bright surface water to mid-water, deep and abyss. Five stacked CSS gradient layers are cross-faded from `scrollTop`, with a fixed depth gauge on wide screens.
+  - **Space**: a fixed starfield with twinkle and parallax, nebula washes, a ringed planet, satellite, rocket, lunar footer and a matching lavender/gold palette. The gauge switches from depth in metres to altitude in kilometres.
+- A pixel toggle in the nav switches themes. It is a real `role="switch"` button, so it works with the keyboard and announces its state.
 - CSS-only light rays, rising bubbles, marine snow and scanlines. No canvas, no background images.
 - Six pixel fish built from one SVG `<symbol>`, gliding on transform/translate animations. They fade in below the surface and are hidden under `prefers-reduced-motion`.
-- **Themed sections carry a plain-language label** next to the heading (`Dive log / About`, `The wrecks / Projects`, `Cargo hold / Technical skills`), and the nav uses the plain terms.
+- **Themed sections carry a plain-language label** next to the heading (`Dive log / About`, `The wrecks / Projects`, `Cargo hold / Technical skills`), and the nav uses the plain terms. In space, the creative headings become `Flight log`, `The derelicts` and `Cargo bay`.
 - **The wrecks and Research & Experiments are sliding decks**: each is a flex rail with `scroll-snap-type: x mandatory`, so it swipes on touch, scrolls on a trackpad, drags with a mouse, and steps with the arrow buttons, arrow keys or the dot row. One small initialiser drives both decks. No library, no per-frame JavaScript.
-- Inline SVG pixel art: sun, clouds, sailboat, coral, anglerfish.
+- Inline SVG pixel art: ocean sun, clouds, sailboat, coral and anglerfish; space planet, moon, satellite, rocket, lander and flag.
 - Photographs are local `webp` files in `img/`, 760 px wide (1800 px for the wide bench band), lazy-loaded.
 - Two Google fonts (`Press Start 2P`, `VT323`); everything degrades to system monospace.
 
-Total payload is roughly 76 KB of HTML plus ~450 KB of photos.
+Total payload is roughly 100 KB of HTML plus ~450 KB of photos.
 
 ## Sections
 
@@ -50,3 +53,6 @@ git push origin master
 - Cards use `.card-media` with a local photo and a pixel captions; every project has one.
 - The wide band under the about grid is `figure.workbench`.
 - The depth cross-fades are computed in the first `<script>` block (`ramp()` calls). Adjust the numbers to change where each water layer takes over.
+- Themes live on `<html data-theme="ocean|space">`. Space palette overrides sit in the `html[data-theme="space"]` blocks; the toggle stores its choice under the `dk-theme` key in `localStorage`.
+- Theme-specific words use `data-ocean` and `data-space` attributes on the element (for example the brand and section headings). The switch script swaps the text without touching the markup.
+- The gauge reads depth in ocean and altitude in space. Star parallax and the altitude value are updated in the same scroll handler as the ocean layers.

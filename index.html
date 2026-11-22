@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="ocean">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,6 +7,16 @@
 <meta name="description" content="Mechatronics engineering student building ESP32 systems, on-device machine learning, industrial telemetry, vacuum plasma hardware and sensor-driven devices." />
 <meta name="author" content="Dhruv Kotian" />
 <meta name="theme-color" content="#0b7494" />
+<script>
+  // Restore the saved theme before first paint so the page never flashes.
+  (function () {
+    try {
+      if (window.localStorage.getItem('dk-theme') === 'space') {
+        document.documentElement.setAttribute('data-theme', 'space');
+      }
+    } catch (e) {}
+  })();
+</script>
 <link rel="canonical" href="https://dhruvkotian.dev/" />
 <meta property="og:title" content="Dhruv Kotian | Embedded Systems &amp; Edge AI" />
 <meta property="og:description" content="Mechatronics engineering student building ESP32 systems, on-device machine learning, industrial telemetry, vacuum plasma hardware and sensor-driven devices." />
@@ -98,6 +108,137 @@
     overflow: hidden;
     pointer-events: none;
     background: var(--sea-base);
+  }
+
+  /* --- space background: fixed starfield + nebula ------------------ */
+  .space {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    display: none;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 120% 85% at 72% -12%, #1b1949 0%, #0b0b28 44%, #06061a 100%);
+  }
+
+  html[data-theme="space"] .space { display: block; }
+  html[data-theme="space"] .sea { display: none; }
+
+  .space-layer,
+  .stars {
+    position: absolute;
+    inset: -6%;
+    will-change: opacity, transform;
+  }
+
+  .nebula-a {
+    background:
+      radial-gradient(ellipse 52% 40% at 78% 10%, rgba(185, 165, 255, .28), transparent 62%),
+      radial-gradient(ellipse 42% 34% at 18% 40%, rgba(255, 110, 199, .15), transparent 66%),
+      radial-gradient(ellipse 46% 32% at 62% 76%, rgba(109, 216, 255, .11), transparent 70%);
+    animation: nebula 34s ease-in-out infinite alternate;
+  }
+
+  .nebula-b {
+    background:
+      radial-gradient(ellipse 58% 42% at 32% 92%, rgba(121, 247, 176, .08), transparent 70%),
+      radial-gradient(ellipse 44% 30% at 90% 60%, rgba(255, 210, 74, .07), transparent 70%);
+    animation: nebula 46s ease-in-out infinite alternate-reverse;
+  }
+
+  @keyframes nebula {
+    from { opacity: .7; transform: scale(1); }
+    to   { opacity: 1;  transform: scale(1.05); }
+  }
+
+  .space-haze {
+    position: absolute;
+    inset: auto 0 -8% 0;
+    height: 42%;
+    background: radial-gradient(ellipse 60% 100% at 50% 100%, rgba(109, 216, 255, .12), transparent 70%);
+  }
+
+  .stars {
+    inset: -22% 0;
+    background-repeat: repeat;
+  }
+
+  .stars-far {
+    background-image:
+      radial-gradient(1px 1px at 18px 34px, rgba(255, 255, 255, .8) 50%, transparent 51%),
+      radial-gradient(1px 1px at 116px 88px, rgba(185, 165, 255, .7) 50%, transparent 51%),
+      radial-gradient(1px 1px at 212px 156px, rgba(255, 255, 255, .55) 50%, transparent 51%),
+      radial-gradient(1px 1px at 64px 208px, rgba(109, 216, 255, .6) 50%, transparent 51%),
+      radial-gradient(1px 1px at 178px 246px, rgba(255, 255, 255, .45) 50%, transparent 51%),
+      radial-gradient(1px 1px at 252px 42px, rgba(255, 154, 216, .55) 50%, transparent 51%);
+    background-size: 280px 280px;
+    opacity: .75;
+    animation: star-drift 90s linear infinite;
+  }
+
+  .stars-near {
+    background-image:
+      radial-gradient(2px 2px at 42px 66px, rgba(255, 255, 255, .9) 50%, transparent 51%),
+      radial-gradient(2px 2px at 196px 132px, rgba(185, 165, 255, .75) 50%, transparent 51%),
+      radial-gradient(2px 2px at 318px 248px, rgba(255, 255, 255, .6) 50%, transparent 51%),
+      radial-gradient(2px 2px at 96px 302px, rgba(109, 216, 255, .6) 50%, transparent 51%),
+      radial-gradient(2px 2px at 388px 58px, rgba(255, 210, 74, .6) 50%, transparent 51%);
+    background-size: 460px 460px;
+    opacity: .8;
+    animation: star-drift-near 70s linear infinite reverse;
+  }
+
+  .stars-bright {
+    background-image:
+      radial-gradient(2px 2px at 80px 110px, #fff 50%, transparent 51%),
+      radial-gradient(2px 2px at 300px 60px, #ffd24a 50%, transparent 51%),
+      radial-gradient(3px 3px at 210px 330px, #b9a5ff 50%, transparent 51%),
+      radial-gradient(2px 2px at 500px 220px, #6dd8ff 50%, transparent 51%),
+      radial-gradient(2px 2px at 400px 420px, #fff 50%, transparent 51%);
+    background-size: 620px 620px;
+    animation:
+      star-twinkle 6s steps(2, end) infinite,
+      star-drift-bright 120s linear infinite;
+  }
+
+  @keyframes star-drift {
+    from { background-position: 0 0; }
+    to   { background-position: 0 280px; }
+  }
+
+  @keyframes star-drift-near {
+    from { background-position: 0 0; }
+    to   { background-position: 0 460px; }
+  }
+
+  @keyframes star-drift-bright {
+    from { background-position: 0 0; }
+    to   { background-position: 0 620px; }
+  }
+
+  @keyframes star-twinkle {
+    0%, 100% { opacity: .45; }
+    50%      { opacity: 1; }
+  }
+
+  .space-shooting {
+    position: absolute;
+    top: 14%;
+    left: -12%;
+    width: 150px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #fff 55%, #6dd8ff);
+    transform: rotate(16deg);
+    opacity: 0;
+    animation: shoot 13s linear infinite;
+  }
+
+  @keyframes shoot {
+    0%, 76% { opacity: 0; transform: translate3d(0, 0, 0) rotate(16deg); }
+    78%     { opacity: .9; }
+    86%     { opacity: 0; transform: translate3d(88vw, 30vh, 0) rotate(16deg); }
+    100%    { opacity: 0; transform: translate3d(88vw, 30vh, 0) rotate(16deg); }
   }
 
   .sea-layer {
@@ -323,9 +464,70 @@
 
   .nav-links .btn-mini:hover { background: var(--foam); border-color: var(--foam); color: #04222f; }
 
-  @media (max-width: 780px) {
+  /* --- theme switch ---------------------------------------------- */
+  .theme-switch {
+    position: relative;
+    flex: none;
+    width: 76px;
+    height: 34px;
+    padding: 0;
+    background: rgba(2, 22, 32, .55);
+    border: 2px solid var(--edge);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--shadow);
+    cursor: pointer;
+    overflow: hidden;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .theme-switch .ts-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    z-index: 0;
+    width: 34px;
+    height: 26px;
+    background: var(--sun);
+    transition: transform .2s steps(4, end), background .2s steps(4, end);
+  }
+
+  .theme-switch .ts-icons {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100%;
+  }
+
+  .theme-switch .ts-icon { display: grid; place-items: center; }
+  .theme-switch .ts-wave { color: #04222f; }
+  .theme-switch .ts-star { color: var(--ink-dim); }
+  .theme-switch:hover { border-color: var(--foam); }
+
+  html[data-theme="space"] .theme-switch { background: rgba(23, 23, 63, .7); }
+  html[data-theme="space"] .theme-switch .ts-knob {
+    transform: translateX(34px);
+    background: var(--foam);
+  }
+  html[data-theme="space"] .theme-switch .ts-wave { color: var(--ink-dim); }
+  html[data-theme="space"] .theme-switch .ts-star { color: #0b0b22; }
+
+  @media (max-width: 1040px) {
+    .nav-links { gap: 13px; font-size: 1rem; }
+  }
+
+  @media (max-width: 900px) {
     .nav-links { gap: 12px; }
     .nav-links a:not(.btn-mini) { display: none; }
+    .nav-links .nav-link-optional { display: none; }
+    .theme-switch { width: 68px; height: 32px; }
+    .theme-switch .ts-knob { width: 30px; height: 24px; }
+    html[data-theme="space"] .theme-switch .ts-knob { transform: translateX(30px); }
+  }
+
+  @media (max-width: 430px) {
+    .nav-links .btn-mini { display: none; }
   }
 
   /* --- shared type / panels -------------------------------------- */
@@ -421,6 +623,80 @@
     inset: 0;
     z-index: 1;
     pointer-events: none;
+  }
+
+  /* --- space hero art --------------------------------------------- */
+  .space-art {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: none;
+    pointer-events: none;
+  }
+
+  html[data-theme="space"] .space-art { display: block; }
+  html[data-theme="space"] .hero-art { display: none; }
+
+  .planet {
+    position: absolute;
+    top: 5%;
+    right: 1%;
+    width: clamp(170px, 25vw, 310px);
+    filter: drop-shadow(0 0 34px rgba(185, 165, 255, .4));
+    animation: float-y 13s ease-in-out infinite;
+  }
+
+  .moonlet {
+    position: absolute;
+    top: 31%;
+    right: 29%;
+    width: clamp(38px, 5vw, 62px);
+    opacity: .85;
+    animation: float-y 9s ease-in-out infinite reverse;
+  }
+
+  .satellite {
+    position: absolute;
+    top: 56%;
+    right: 5%;
+    width: clamp(88px, 11vw, 132px);
+    animation: sat-bob 7s ease-in-out infinite;
+  }
+
+  .satellite .beacon { animation: beacon 2.6s steps(2, end) infinite; }
+
+  .rocket {
+    position: absolute;
+    right: 26%;
+    bottom: 13%;
+    width: clamp(38px, 4.4vw, 56px);
+    animation: rocket-hover 6s ease-in-out infinite;
+  }
+
+  .rocket .flame {
+    transform-box: fill-box;
+    transform-origin: 50% 0;
+    animation: flame .45s steps(2, end) infinite;
+  }
+
+  @keyframes float-y {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-14px); }
+  }
+
+  @keyframes sat-bob {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50%      { transform: translateY(-10px) rotate(2deg); }
+  }
+
+  @keyframes rocket-hover {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+
+  @keyframes flame {
+    0%, 100% { transform: scaleY(1); opacity: 1; }
+    50%      { transform: scaleY(.66); opacity: .7; }
   }
 
   .hero-art .sun {
@@ -597,6 +873,15 @@
     .wave-band.w2 { bottom: 24px; height: 40px; }
     .wave-band.w3 { height: 34px; }
     .eyebrow { font-size: .5rem; letter-spacing: .04em; }
+    .planet { top: 3%; right: -10%; width: clamp(130px, 28vw, 190px); opacity: .7; }
+    .moonlet { display: none; }
+    .satellite { top: auto; bottom: 14%; right: 6%; width: 82px; opacity: .8; }
+    .rocket { display: none; }
+  }
+
+  @media (max-width: 560px) {
+    .planet { top: 2%; right: -18%; width: 150px; opacity: .5; }
+    .satellite { bottom: 9%; width: 66px; opacity: .62; }
   }
 
   /* --- ticker ----------------------------------------------------- */
@@ -1170,6 +1455,76 @@
     pointer-events: none;
   }
 
+  /* --- space footer: lunar surface -------------------------------- */
+  .space-floor {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    display: none;
+    height: 120px;
+    pointer-events: none;
+  }
+
+  html[data-theme="space"] .space-floor { display: block; }
+  html[data-theme="space"] .floor { display: none; }
+
+  .space-ground {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 52px;
+    background:
+      radial-gradient(18px 6px at 14% 16px, #0b0b22 60%, transparent 62%),
+      radial-gradient(26px 8px at 46% 30px, #0b0b22 60%, transparent 62%),
+      radial-gradient(14px 5px at 72% 14px, #0b0b22 60%, transparent 62%),
+      radial-gradient(20px 7px at 88% 32px, #0b0b22 60%, transparent 62%),
+      linear-gradient(180deg, #2b2757 0%, #1a1738 52%, #0c0a21 100%);
+    border-top: 4px solid #4b4490;
+  }
+
+  .space-ground::before {
+    content: "";
+    position: absolute;
+    top: -13px;
+    left: 0;
+    right: 0;
+    height: 13px;
+    background-image:
+      linear-gradient(90deg,
+        transparent 0 24px, #2b2757 24px 60px,
+        transparent 60px 118px, #2b2757 118px 154px,
+        transparent 154px 240px, #2b2757 240px 284px,
+        transparent 284px 356px, #2b2757 356px 392px,
+        transparent 392px);
+    background-size: 392px 13px;
+  }
+
+  .lander {
+    position: absolute;
+    right: 9%;
+    bottom: 44px;
+    width: clamp(90px, 11vw, 130px);
+    filter: drop-shadow(0 0 18px rgba(185, 165, 255, .25));
+  }
+
+  .lander .beacon { animation: beacon 2.6s steps(2, end) infinite; }
+
+  @keyframes beacon {
+    0%, 49%   { opacity: .25; }
+    50%, 100% { opacity: 1; }
+  }
+
+  .lunar-flag {
+    position: absolute;
+    left: 7%;
+    bottom: 42px;
+    width: clamp(46px, 5vw, 64px);
+    opacity: .8;
+  }
+
   .floor-sand {
     position: absolute;
     left: 0;
@@ -1219,6 +1574,120 @@
     opacity: .55;
   }
 
+  /* --- space theme: palette overrides ----------------------------- */
+  html[data-theme="space"] {
+    --sea-base: #07071c;
+    --panel: rgba(23, 23, 63, .78);
+    --panel-solid: #17173f;
+    --edge: #3b3578;
+    --edge-soft: rgba(185, 165, 255, .2);
+    --ink: #f3f0ff;
+    --ink-dim: #b1abd6;
+    --sun: #ffd24a;
+    --coral: #ff6ec7;
+    --foam: #b9a5ff;
+    --biolum: #6dd8ff;
+    --jelly: #ff9ad8;
+    --kelp: #79f7b0;
+    --shadow: rgba(2, 2, 14, .72);
+  }
+
+  html[data-theme="space"] body { background: #07071c; }
+
+  html[data-theme="space"] .vignette {
+    background: radial-gradient(ellipse 90% 70% at 50% 45%, transparent 52%, rgba(1, 1, 8, .62) 100%);
+  }
+
+  html[data-theme="space"] .nav--deep {
+    background: rgba(7, 7, 28, .86);
+    border-bottom-color: rgba(185, 165, 255, .24);
+  }
+
+  html[data-theme="space"] .status li {
+    border-color: rgba(185, 165, 255, .34);
+    background: rgba(23, 23, 63, .55);
+  }
+
+  html[data-theme="space"] .status li.live { border-color: rgba(121, 247, 176, .5); }
+
+  html[data-theme="space"] .depth-tag {
+    border-color: rgba(185, 165, 255, .34);
+    background: rgba(10, 10, 35, .7);
+  }
+
+  html[data-theme="space"] .gauge {
+    background: rgba(10, 10, 35, .7);
+    border-color: rgba(185, 165, 255, .24);
+  }
+
+  html[data-theme="space"] .ticker {
+    background: rgba(10, 10, 35, .7);
+    border-color: rgba(185, 165, 255, .18);
+  }
+
+  html[data-theme="space"] .spec .row { border-bottom-color: rgba(185, 165, 255, .18); }
+
+  html[data-theme="space"] .workbench::after {
+    background:
+      repeating-linear-gradient(to bottom, rgba(0, 0, 0, .14) 0 1px, transparent 1px 4px),
+      linear-gradient(180deg, rgba(23, 23, 63, .2), rgba(4, 4, 18, .5));
+  }
+
+  html[data-theme="space"] .workbench figcaption {
+    background: rgba(6, 6, 22, .82);
+    border-top-color: rgba(185, 165, 255, .2);
+  }
+
+  html[data-theme="space"] .rail-dot { border-color: rgba(185, 165, 255, .42); }
+
+  html[data-theme="space"] .card-links { border-top-color: rgba(185, 165, 255, .18); }
+
+  html[data-theme="space"] .card-media { background: #0b0b26; }
+
+  html[data-theme="space"] .card-media::after {
+    background:
+      repeating-linear-gradient(to bottom, rgba(0, 0, 0, .16) 0 1px, transparent 1px 4px),
+      linear-gradient(180deg, rgba(23, 23, 63, .2), rgba(4, 4, 18, .38));
+  }
+
+  html[data-theme="space"] .card-media figcaption { background: rgba(6, 6, 22, .82); }
+
+  html[data-theme="space"] .tags li { border-color: rgba(185, 165, 255, .22); }
+
+  html[data-theme="space"] .chips li {
+    background: rgba(10, 10, 35, .74);
+    border-color: rgba(185, 165, 255, .22);
+  }
+
+  html[data-theme="space"] .chips li:nth-child(3n+1) { border-color: rgba(255, 210, 74, .4); }
+  html[data-theme="space"] .chips li:nth-child(3n+2) { border-color: rgba(109, 216, 255, .4); }
+  html[data-theme="space"] .chips li:nth-child(3n+3) { border-color: rgba(255, 154, 216, .4); }
+
+  html[data-theme="space"] .footer {
+    border-top-color: rgba(185, 165, 255, .18);
+    background: linear-gradient(180deg, rgba(10, 10, 35, .42), rgba(3, 3, 14, .9));
+  }
+
+  html[data-theme="space"] .footer-links a {
+    border-color: rgba(185, 165, 255, .22);
+    background: rgba(10, 10, 35, .55);
+  }
+
+  html[data-theme="space"] .colophon { border-top-color: rgba(185, 165, 255, .18); }
+
+  html[data-theme="space"] h1 { text-shadow: 5px 5px 0 rgba(4, 3, 18, .72); }
+  html[data-theme="space"] h2 { text-shadow: 3px 3px 0 rgba(4, 3, 18, .72); }
+
+  html[data-theme="space"] .tagline,
+  html[data-theme="space"] .hero-note,
+  html[data-theme="space"] .eyebrow { text-shadow: 2px 2px 0 rgba(4, 3, 18, .6); }
+
+  html[data-theme="space"] .section-num { color: #1b1533; }
+  html[data-theme="space"] .card-badge { color: #12102b; }
+  html[data-theme="space"] .btn-primary { color: #1b1533; }
+  html[data-theme="space"] .nav-links .btn-mini { color: #1b1533; }
+  html[data-theme="space"] .skip { color: #1b1533; }
+
   /* --- reveal on scroll ------------------------------------------- */
   .reveal {
     opacity: 0;
@@ -1243,7 +1712,7 @@
   }
 
   @media print {
-    .sea, .vignette, .grain, .progress, .nav, .ticker, .gauge, .shore, .floor, .hero-art { display: none !important; }
+    .sea, .space, .vignette, .grain, .progress, .nav, .ticker, .gauge, .shore, .floor, .space-floor, .hero-art, .space-art, .theme-switch { display: none !important; }
     body { background: #fff; color: #000; }
     .panel, .card { box-shadow: none; border-color: #999; background: #fff; }
     .card p, .prose p, .spec dd { color: #222; }
@@ -1251,6 +1720,15 @@
 </style>
 </head>
 <body>
+<div class="space" aria-hidden="true">
+  <div class="space-layer nebula-a"></div>
+  <div class="space-layer nebula-b"></div>
+  <div class="space-haze"></div>
+  <div class="stars stars-far" data-space-layer="far"></div>
+  <div class="stars stars-near" data-space-layer="near"></div>
+  <div class="stars stars-bright" data-space-layer="bright"></div>
+  <span class="space-shooting"></span>
+</div>
 <div class="sea" aria-hidden="true">
   <div class="sea-layer l-abyss" data-layer="abyss"></div>
   <div class="sea-layer l-deep" data-layer="deep"></div>
@@ -1325,20 +1803,27 @@
 <aside class="gauge" id="gauge" aria-hidden="true">
   <div class="gauge-track"><span class="gauge-dot"></span></div>
   <div class="gauge-read">
-    <b><span id="depthVal">0</span> m</b>
-    <i>DEPTH</i>
+    <b><span id="depthVal">0</span> <span id="gaugeUnit">m</span></b>
+    <i id="gaugeLabel">DEPTH</i>
   </div>
 </aside>
 
 <header class="nav" id="nav">
   <div class="wrap">
-    <a class="brand" href="#top">DK<span>://</span>DIVE</a>
+    <a class="brand" href="#top">DK<span>://</span><span id="brandMode" data-ocean="DIVE" data-space="ORBIT">DIVE</span></a>
     <nav class="nav-links" aria-label="Primary">
       <a href="#about">About</a>
       <a href="#projects">Projects</a>
       <a href="#research">Research</a>
       <a href="#stack">Technical skills</a>
-      <a class="btn-mini" href="https://www.linkedin.com/in/dhruvkotian/" target="_blank" rel="noopener">LinkedIn &#8599;</a>
+      <button class="theme-switch" id="themeSwitch" type="button" role="switch" aria-checked="false" aria-label="Space theme" title="Switch to space theme">
+        <span class="ts-knob" aria-hidden="true"></span>
+        <span class="ts-icons" aria-hidden="true">
+          <span class="ts-icon ts-wave"><svg width="18" height="12" viewBox="0 0 18 12" shape-rendering="crispEdges"><g fill="currentColor"><rect x="0" y="6" width="3" height="2"/><rect x="3" y="3" width="3" height="2"/><rect x="6" y="6" width="3" height="2"/><rect x="9" y="3" width="3" height="2"/><rect x="12" y="6" width="3" height="2"/><rect x="15" y="9" width="3" height="2"/></g></svg></span>
+          <span class="ts-icon ts-star"><svg width="14" height="14" viewBox="0 0 14 14" shape-rendering="crispEdges"><g fill="currentColor"><rect x="6" y="0" width="2" height="4"/><rect x="6" y="10" width="2" height="4"/><rect x="0" y="6" width="4" height="2"/><rect x="10" y="6" width="4" height="2"/><rect x="4" y="4" width="2" height="2"/><rect x="8" y="4" width="2" height="2"/><rect x="4" y="8" width="2" height="2"/><rect x="8" y="8" width="2" height="2"/></g></svg></span>
+        </span>
+      </button>
+      <a class="btn-mini nav-link-optional" href="https://www.linkedin.com/in/dhruvkotian/" target="_blank" rel="noopener">LinkedIn &#8599;</a>
       <a class="btn-mini" href="https://github.com/dhruvkotian" target="_blank" rel="noopener">GitHub &#8599;</a>
     </nav>
   </div>
@@ -1404,6 +1889,93 @@
       </div>
     </div>
 
+    <div class="space-art" aria-hidden="true">
+      <svg class="planet" viewBox="0 0 200 170" shape-rendering="crispEdges">
+        <g transform="rotate(-16 100 85)">
+          <ellipse cx="100" cy="85" rx="92" ry="22" fill="none" stroke="#ffd24a" stroke-width="9" opacity=".55"/>
+        </g>
+        <circle cx="100" cy="85" r="58" fill="#b9a5ff"/>
+        <circle cx="90" cy="76" r="46" fill="#a48ff0"/>
+        <circle cx="116" cy="101" r="32" fill="#7f68d6" opacity=".55"/>
+        <g fill="#7f68d6">
+          <rect x="70" y="60" width="18" height="14"/>
+          <rect x="104" y="48" width="14" height="12"/>
+          <rect x="116" y="98" width="20" height="14"/>
+          <rect x="78" y="102" width="12" height="10"/>
+        </g>
+        <g fill="#d9ccff">
+          <rect x="66" y="74" width="18" height="4"/>
+          <rect x="100" y="56" width="12" height="4"/>
+          <rect x="112" y="108" width="20" height="4"/>
+        </g>
+        <g transform="rotate(-16 100 85)">
+          <path d="M8 85 A92 22 0 0 0 192 85" fill="none" stroke="#ffd24a" stroke-width="9"/>
+        </g>
+      </svg>
+
+      <svg class="moonlet" viewBox="0 0 64 64" shape-rendering="crispEdges">
+        <circle cx="32" cy="32" r="26" fill="#8f8ac2"/>
+        <circle cx="24" cy="26" r="16" fill="#a8a3d6" opacity=".6"/>
+        <g fill="#6c679e">
+          <rect x="18" y="30" width="10" height="8"/>
+          <rect x="36" y="18" width="8" height="8"/>
+          <rect x="34" y="40" width="12" height="8"/>
+        </g>
+        <g fill="#c9c4ee">
+          <rect x="16" y="34" width="12" height="3"/>
+          <rect x="34" y="22" width="8" height="3"/>
+        </g>
+      </svg>
+
+      <svg class="satellite" viewBox="0 0 140 80" shape-rendering="crispEdges">
+        <g fill="#6dd8ff">
+          <rect x="6" y="22" width="38" height="36"/>
+          <rect x="96" y="22" width="38" height="36"/>
+        </g>
+        <g fill="#2a4a80">
+          <rect x="12" y="28" width="10" height="24"/>
+          <rect x="26" y="28" width="10" height="24"/>
+          <rect x="102" y="28" width="10" height="24"/>
+          <rect x="116" y="28" width="10" height="24"/>
+        </g>
+        <g fill="#b9a5ff">
+          <rect x="48" y="30" width="44" height="22"/>
+          <rect x="44" y="24" width="52" height="6"/>
+        </g>
+        <g fill="#ffd24a">
+          <rect x="56" y="36" width="12" height="10"/>
+          <rect x="72" y="36" width="12" height="10"/>
+        </g>
+        <rect x="66" y="12" width="8" height="12" fill="#f3f0ff"/>
+        <circle class="beacon" cx="70" cy="10" r="3" fill="#ff6ec7"/>
+        <rect x="64" y="52" width="10" height="10" fill="#f3f0ff"/>
+        <rect x="88" y="52" width="4" height="14" fill="#6dd8ff"/>
+        <rect x="80" y="64" width="20" height="4" fill="#6dd8ff"/>
+      </svg>
+
+      <svg class="rocket" viewBox="0 0 48 72" shape-rendering="crispEdges">
+        <g fill="#f3f0ff">
+          <rect x="16" y="16" width="16" height="34"/>
+          <rect x="20" y="8" width="8" height="8"/>
+        </g>
+        <g fill="#ff6ec7">
+          <rect x="20" y="0" width="8" height="8"/>
+          <rect x="16" y="8" width="16" height="8"/>
+        </g>
+        <rect x="20" y="24" width="8" height="10" fill="#6dd8ff"/>
+        <rect x="22" y="26" width="4" height="4" fill="#0a0a23"/>
+        <g fill="#ffd24a">
+          <rect x="8" y="36" width="8" height="18"/>
+          <rect x="32" y="36" width="8" height="18"/>
+        </g>
+        <rect x="16" y="50" width="16" height="6" fill="#b9a5ff"/>
+        <g class="flame" fill="#ff9a5c">
+          <rect x="18" y="56" width="12" height="8"/>
+          <rect x="20" y="64" width="8" height="6" fill="#ffd24a"/>
+        </g>
+      </svg>
+    </div>
+
     <div class="wrap">
       <div class="hero-copy">
         <p class="pixel-label eyebrow">[ MECHATRONICS &middot; EDGE AI &middot; EMBEDDED ]</p>
@@ -1449,9 +2021,9 @@
     <div class="wrap">
       <div class="section-head reveal">
         <span class="section-num">01</span>
-        <h2>Dive log</h2>
+        <h2 data-ocean="Dive log" data-space="Flight log">Dive log</h2>
         <span class="section-label">About</span>
-        <span class="depth-tag">&minus; 240 m</span>
+        <span class="depth-tag" data-ocean="&minus; 240 m" data-space="ALT 240 km">&minus; 240 m</span>
       </div>
 
       <div class="about-grid">
@@ -1516,9 +2088,9 @@
     <div class="wrap">
       <div class="section-head reveal">
         <span class="section-num">02</span>
-        <h2>The wrecks</h2>
+        <h2 data-ocean="The wrecks" data-space="The derelicts">The wrecks</h2>
         <span class="section-label">Projects</span>
-        <span class="depth-tag">&minus; 1 200 m</span>
+        <span class="depth-tag" data-ocean="&minus; 1 200 m" data-space="ALT 1 200 km">&minus; 1 200 m</span>
       </div>
       <p class="section-sub reveal" style="margin-bottom:32px">
         Eight builds recovered from the bench: wearables, industrial telemetry, predictive
@@ -1765,7 +2337,7 @@
       <div class="section-head reveal">
         <span class="section-num">03</span>
         <h2>Research &amp; Experiments</h2>
-        <span class="depth-tag">&minus; 1 800 m</span>
+        <span class="depth-tag" data-ocean="&minus; 1 800 m" data-space="ALT 1 800 km">&minus; 1 800 m</span>
       </div>
       <p class="section-sub reveal" style="margin-bottom:32px">
         Open-ended bench work: hardware still being characterised rather than shipped. A
@@ -1897,9 +2469,9 @@
     <div class="wrap">
       <div class="section-head reveal">
         <span class="section-num">04</span>
-        <h2>Cargo hold</h2>
+        <h2 data-ocean="Cargo hold" data-space="Cargo bay">Cargo hold</h2>
         <span class="section-label">Technical skills</span>
-        <span class="depth-tag">&minus; 2 600 m</span>
+        <span class="depth-tag" data-ocean="&minus; 2 600 m" data-space="ALT 2 600 km">&minus; 2 600 m</span>
       </div>
 
       <div class="stack-grid">
@@ -1991,6 +2563,41 @@
       <div class="floor-sand"></div>
     </div>
 
+    <div class="space-floor" aria-hidden="true">
+      <div class="space-ground"></div>
+      <svg class="lunar-flag" viewBox="0 0 64 100" shape-rendering="crispEdges">
+        <rect x="8" y="12" width="4" height="80" fill="#f3f0ff"/>
+        <rect x="12" y="16" width="40" height="26" fill="#ff6ec7"/>
+        <rect x="12" y="16" width="40" height="5" fill="#ff9ad8"/>
+        <g fill="#0a0a23">
+          <rect x="18" y="26" width="8" height="8"/>
+          <rect x="34" y="26" width="8" height="8"/>
+          <rect x="26" y="34" width="12" height="4"/>
+        </g>
+      </svg>
+      <svg class="lander" viewBox="0 0 120 100" shape-rendering="crispEdges">
+        <g fill="#b9a5ff">
+          <rect x="42" y="16" width="36" height="30"/>
+          <rect x="34" y="26" width="52" height="12"/>
+          <rect x="50" y="46" width="20" height="16"/>
+        </g>
+        <g fill="#ffd24a">
+          <rect x="46" y="46" width="10" height="16"/>
+          <rect x="62" y="46" width="10" height="16"/>
+        </g>
+        <rect x="52" y="22" width="10" height="8" fill="#6dd8ff"/>
+        <rect class="beacon" x="92" y="16" width="6" height="6" fill="#ff6ec7"/>
+        <rect x="88" y="22" width="3" height="14" fill="#f3f0ff"/>
+        <g fill="#f3f0ff">
+          <rect x="24" y="64" width="5" height="22"/>
+          <rect x="91" y="64" width="5" height="22"/>
+          <rect x="16" y="84" width="21" height="5"/>
+          <rect x="83" y="84" width="21" height="5"/>
+        </g>
+        <rect x="46" y="62" width="28" height="6" fill="#8f7fe0"/>
+      </svg>
+    </div>
+
     <div class="wrap">
       <div class="footer-grid">
         <div>
@@ -2018,6 +2625,52 @@
 
 <script>
   // ---------------------------------------------------------------
+  // Theme switch: ocean <-> space, remembered across visits
+  // ---------------------------------------------------------------
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeSwitch');
+    var meta = document.querySelector('meta[name="theme-color"]');
+    var KEY = 'dk-theme';
+
+    function current() {
+      return root.getAttribute('data-theme') === 'space' ? 'space' : 'ocean';
+    }
+
+    function apply(theme, persist) {
+      var space = theme === 'space';
+
+      root.setAttribute('data-theme', space ? 'space' : 'ocean');
+
+      if (btn) {
+        btn.setAttribute('aria-checked', space ? 'true' : 'false');
+        btn.title = space ? 'Switch to ocean theme' : 'Switch to space theme';
+      }
+      if (meta) meta.setAttribute('content', space ? '#0a0a23' : '#0b7494');
+
+      Array.prototype.forEach.call(document.querySelectorAll('[data-ocean]'), function (el) {
+        var value = el.getAttribute(space ? 'data-space' : 'data-ocean');
+        if (value !== null) el.textContent = value;
+      });
+
+      if (persist) {
+        try { window.localStorage.setItem(KEY, theme); } catch (e) {}
+      }
+
+      // Let the scroll handler refresh the gauge units and star parallax.
+      document.dispatchEvent(new CustomEvent('dk:theme'));
+    }
+
+    if (btn) {
+      btn.addEventListener('click', function () {
+        apply(current() === 'space' ? 'ocean' : 'space', true);
+      });
+    }
+
+    apply(current(), false);
+  })();
+
+  // ---------------------------------------------------------------
   // Scroll-driven ocean depth
   // ---------------------------------------------------------------
   (function () {
@@ -2025,6 +2678,8 @@
     var bar = document.getElementById('progress');
     var gauge = document.getElementById('gauge');
     var depthVal = document.getElementById('depthVal');
+    var gaugeUnit = document.getElementById('gaugeUnit');
+    var gaugeLabel = document.getElementById('gaugeLabel');
     var nav = document.getElementById('nav');
 
     var layers = {
@@ -2037,6 +2692,12 @@
       fish: document.querySelector('[data-layer="fish"]')
     };
 
+    var stars = {
+      far: document.querySelector('[data-space-layer="far"]'),
+      near: document.querySelector('[data-space-layer="near"]'),
+      bright: document.querySelector('[data-space-layer="bright"]')
+    };
+
     function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
     function ramp(v, a, b) { return clamp((v - a) / (b - a), 0, 1); }
     function setOpacity(el, v) { if (el) el.style.opacity = v.toFixed(3); }
@@ -2046,6 +2707,7 @@
     function update() {
       var max = doc.scrollHeight - doc.clientHeight;
       var p = max > 0 ? clamp(doc.scrollTop / max, 0, 1) : 0;
+      var space = doc.getAttribute('data-theme') === 'space';
 
       if (bar) bar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
 
@@ -2058,11 +2720,24 @@
       if (layers.bubbles) layers.bubbles.style.opacity = (0.85 - p * 0.55).toFixed(3);
       setOpacity(layers.fish, ramp(p, .02, .12) * (1 - ramp(p, .72, 1) * .3));
 
-      // gauge
+      // star layers drift apart as the page climbs toward orbit
+      if (space) {
+        if (stars.far) stars.far.style.transform = 'translate3d(0,' + (-p * 22).toFixed(1) + 'px,0)';
+        if (stars.near) stars.near.style.transform = 'translate3d(0,' + (-p * 54).toFixed(1) + 'px,0)';
+        if (stars.bright) stars.bright.style.transform = 'translate3d(0,' + (-p * 96).toFixed(1) + 'px,0)';
+      } else {
+        if (stars.far) stars.far.style.transform = '';
+        if (stars.near) stars.near.style.transform = '';
+        if (stars.bright) stars.bright.style.transform = '';
+      }
+
+      // gauge: metres below the surface, or kilometres above it
       if (gauge) gauge.style.setProperty('--d', p.toFixed(4));
+      if (gaugeUnit) gaugeUnit.textContent = space ? 'km' : 'm';
+      if (gaugeLabel) gaugeLabel.textContent = space ? 'ALT' : 'DEPTH';
       if (depthVal) {
-        var metres = Math.round(p * 3800);
-        depthVal.textContent = metres.toLocaleString('en-US');
+        var amount = Math.round(p * (space ? 420 : 3800));
+        depthVal.textContent = amount.toLocaleString('en-US');
       }
 
       // nav goes dark once we leave the surface
@@ -2078,6 +2753,7 @@
       }
     }
 
+    document.addEventListener('dk:theme', update);
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
     update();
