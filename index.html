@@ -11,8 +11,12 @@
   // Restore the saved theme before first paint so the page never flashes.
   (function () {
     try {
-      if (window.localStorage.getItem('dk-theme') === 'space') {
-        document.documentElement.setAttribute('data-theme', 'space');
+      var saved = window.localStorage.getItem('dk-theme');
+      var q = new URLSearchParams(window.location.search).get('theme');
+      if (q === 'ocean' || q === 'space' || q === 'gothic') {
+        document.documentElement.setAttribute('data-theme', q);
+      } else if (saved === 'space' || saved === 'gothic') {
+        document.documentElement.setAttribute('data-theme', saved);
       }
     } catch (e) {}
   })();
@@ -427,54 +431,41 @@
 
   .nav-links .btn-mini:hover { background: var(--foam); border-color: var(--foam); color: #04222f; }
 
-  /* --- theme switch ---------------------------------------------- */
+  /* --- theme switch: ocean / space / gothic ----------------------- */
   .theme-switch {
-    position: relative;
+    display: flex;
     flex: none;
-    width: 76px;
-    height: 34px;
-    padding: 0;
+    gap: 2px;
+    padding: 2px;
     background: rgba(2, 22, 32, .55);
     border: 2px solid var(--edge);
-    border-radius: 0;
     box-shadow: 3px 3px 0 var(--shadow);
+  }
+
+  .ts-opt {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 26px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    color: var(--ink-dim);
     cursor: pointer;
-    overflow: hidden;
     -webkit-appearance: none;
     appearance: none;
+    transition: background .18s steps(3, end), color .18s steps(3, end);
   }
 
-  .theme-switch .ts-knob {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    z-index: 0;
-    width: 34px;
-    height: 26px;
-    background: var(--sun);
-    transition: transform .2s steps(4, end), background .2s steps(4, end);
-  }
-
-  .theme-switch .ts-icons {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    height: 100%;
-  }
-
-  .theme-switch .ts-icon { display: grid; place-items: center; }
-  .theme-switch .ts-wave { color: #04222f; }
-  .theme-switch .ts-star { color: var(--ink-dim); }
+  .ts-opt:hover { color: var(--ink); background: rgba(126, 249, 255, .1); }
+  .ts-opt:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .ts-opt[aria-checked="true"] { background: var(--sun); color: #04222f; }
+  .ts-opt[aria-checked="true"]:hover { color: #04222f; }
   .theme-switch:hover { border-color: var(--foam); }
 
   html[data-theme="space"] .theme-switch { background: rgba(23, 23, 63, .7); }
-  html[data-theme="space"] .theme-switch .ts-knob {
-    transform: translateX(34px);
-    background: var(--foam);
-  }
-  html[data-theme="space"] .theme-switch .ts-wave { color: var(--ink-dim); }
-  html[data-theme="space"] .theme-switch .ts-star { color: #0b0b22; }
+  html[data-theme="space"] .ts-opt:hover { background: rgba(185, 165, 255, .14); }
+  html[data-theme="space"] .ts-opt[aria-checked="true"] { background: var(--foam); color: #0b0b22; }
 
   @media (max-width: 1040px) {
     .nav-links { gap: 13px; font-size: 1rem; }
@@ -484,9 +475,7 @@
     .nav-links { gap: 12px; }
     .nav-links a:not(.btn-mini) { display: none; }
     .nav-links .nav-link-optional { display: none; }
-    .theme-switch { width: 68px; height: 32px; }
-    .theme-switch .ts-knob { width: 30px; height: 24px; }
-    html[data-theme="space"] .theme-switch .ts-knob { transform: translateX(30px); }
+    .ts-opt { width: 25px; height: 24px; }
   }
 
   @media (max-width: 430px) {
@@ -1651,6 +1640,552 @@
   html[data-theme="space"] .nav-links .btn-mini { color: #1b1533; }
   html[data-theme="space"] .skip { color: #1b1533; }
 
+  /* --- gothic theme: crypt, blood and bone ------------------------ */
+  .crypt {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    display: none;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 82% 58% at 78% 4%, rgba(126, 8, 20, .42), transparent 62%),
+      radial-gradient(ellipse 62% 46% at 12% 70%, rgba(80, 4, 12, .3), transparent 68%),
+      linear-gradient(180deg, #0a0205 0%, #030103 54%, #0b0204 100%);
+    contain: paint;
+  }
+
+  html[data-theme="gothic"] .crypt { display: block; }
+  html[data-theme="gothic"] .sea,
+  html[data-theme="gothic"] .space { display: none; }
+
+  .crypt-vault {
+    position: absolute;
+    inset: 0;
+    opacity: .55;
+    background:
+      repeating-linear-gradient(90deg,
+        transparent 0 148px,
+        rgba(158, 16, 30, .1) 148px 154px,
+        transparent 154px 302px),
+      radial-gradient(ellipse 68% 42% at 50% 0%, rgba(196, 20, 38, .16), transparent 72%);
+  }
+
+  .crypt-glow {
+    position: absolute;
+    inset: 0;
+    opacity: .7;
+    background:
+      radial-gradient(circle 320px at 78% 11%, rgba(214, 20, 40, .24), transparent 70%),
+      radial-gradient(circle 240px at 16% 82%, rgba(140, 10, 22, .18), transparent 72%);
+    will-change: opacity;
+  }
+
+  .crypt-fog {
+    position: absolute;
+    left: -12%;
+    right: -12%;
+    bottom: -14%;
+    height: 58%;
+    background:
+      radial-gradient(ellipse 40% 52% at 22% 70%, rgba(124, 12, 24, .2), transparent 70%),
+      radial-gradient(ellipse 46% 60% at 76% 82%, rgba(92, 8, 18, .22), transparent 72%);
+    will-change: transform;
+  }
+
+  .crypt-web {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    z-index: 1;
+    display: none;
+    width: clamp(190px, 24vw, 320px);
+    height: auto;
+    color: #d6cdbe;
+    opacity: .14;
+    pointer-events: none;
+  }
+
+  html[data-theme="gothic"] .crypt-web { display: block; }
+
+  @property --silk {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 46px;
+  }
+
+  @property --depth {
+    syntax: '<integer>';
+    inherits: false;
+    initial-value: 0;
+  }
+
+  .spider-rig {
+    --silk: 46px;
+    --silk-end: calc(100vh - clamp(54px, 8vh, 92px) - 145px);
+    position: fixed;
+    top: clamp(54px, 8vh, 92px);
+    left: clamp(10px, 8vw, 110px);
+    z-index: 44;
+    display: none;
+    width: clamp(15px, 2vw, 25px);
+    height: 0;
+    pointer-events: none;
+  }
+
+  @media (max-width: 1339px) {
+    .spider-rig {
+      left: 4px;
+      width: 15px;
+      --silk-end: calc(100vh - clamp(54px, 8vh, 92px) - 136px);
+    }
+  }
+
+  html[data-theme="gothic"] .spider-rig { display: block; }
+
+  .spider-silk {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 1px;
+    height: var(--silk);
+    background: linear-gradient(180deg, rgba(214, 205, 190, .5), rgba(214, 205, 190, .2));
+    transform: translateX(-50%);
+  }
+
+  .crypt-spider {
+    position: absolute;
+    top: var(--silk);
+    left: 50%;
+    display: block;
+    width: 100%;
+    height: auto;
+    color: #d6cdbe;
+    transform: translateX(-50%);
+    transform-origin: 50% 0;
+    filter: drop-shadow(0 0 3px rgba(255, 60, 60, .2));
+    animation: spider-sway 7s ease-in-out infinite;
+  }
+
+  @keyframes spider-sway {
+    0%, 100% { transform: translateX(-50%) rotate(-2.5deg); }
+    50%      { transform: translateX(-50%) rotate(2.5deg); }
+  }
+
+  .spider-depth {
+    --depth: 0;
+    counter-reset: depth var(--depth);
+    position: absolute;
+    top: calc(var(--silk) + 2px);
+    left: calc(100% + 6px);
+    padding: 2px 5px 2px 4px;
+    font-family: var(--font-pixel);
+    font-size: .42rem;
+    line-height: 1.2;
+    color: #d6cdbe;
+    background: rgba(8, 1, 3, .62);
+    border-left: 2px solid rgba(124, 12, 24, .72);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, .9);
+  }
+
+  @keyframes spider-climb {
+    0%   { --silk: 46px; }
+    12%  { --silk: 22vh; }
+    18%  { --silk: 17vh; }
+    30%  { --silk: 34vh; }
+    36%  { --silk: 29vh; }
+    48%  { --silk: 48vh; }
+    54%  { --silk: 43vh; }
+    66%  { --silk: 61vh; }
+    72%  { --silk: 56vh; }
+    84%  { --silk: 73vh; }
+    90%  { --silk: 68vh; }
+    100% { --silk: var(--silk-end); }
+  }
+
+  @keyframes spider-depth-count {
+    from { --depth: 0; }
+    to   { --depth: 3800; }
+  }
+
+  @supports (animation-timeline: scroll(root block)) {
+    .spider-rig {
+      animation: spider-climb linear 1ms both;
+      animation-timeline: scroll(root block);
+    }
+
+    .spider-depth {
+      animation: spider-depth-count linear 1ms both;
+      animation-timeline: scroll(root block);
+    }
+
+    .spider-depth > span { display: none; }
+    .spider-depth::after { content: counter(depth) " m"; }
+  }
+
+  /* gothic hero art */
+  .gothic-art {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: none;
+    pointer-events: none;
+  }
+
+  html[data-theme="gothic"] .gothic-art { display: block; }
+  html[data-theme="gothic"] .hero-art,
+  html[data-theme="gothic"] .space-art { display: none; }
+
+  .blood-moon {
+    position: absolute;
+    top: 3%;
+    right: 4%;
+    width: clamp(150px, 22vw, 258px);
+    filter: drop-shadow(0 0 30px rgba(204, 20, 38, .48));
+  }
+
+  .hero-skull {
+    position: absolute;
+    top: 43%;
+    right: 14%;
+    width: clamp(88px, 12vw, 152px);
+    filter: drop-shadow(0 0 16px rgba(255, 54, 54, .16));
+    animation: float-y 11s ease-in-out infinite;
+  }
+
+  .bat {
+    position: absolute;
+    color: #26080e;
+    filter: drop-shadow(0 0 5px rgba(255, 52, 52, .24));
+    animation: bat-hover 7s ease-in-out infinite;
+  }
+
+  .bat .wing { transform-box: fill-box; }
+  .bat .wing-l { transform-origin: 100% 34%; animation: wing-l 1.1s steps(2, end) infinite; }
+  .bat .wing-r { transform-origin: 0 34%; animation: wing-r 1.1s steps(2, end) infinite; }
+
+  .bat-a { top: 11%; right: 27%; width: clamp(38px, 4.6vw, 60px); }
+  .bat-b { top: 30%; right: 5%; width: clamp(26px, 3.2vw, 40px); animation-duration: 9s; animation-direction: reverse; }
+  .bat-c { top: 7%; right: 40%; width: clamp(20px, 2.4vw, 30px); opacity: .72; animation-duration: 11s; animation-delay: -3s; }
+
+  @keyframes bat-hover {
+    0%, 100% { transform: translate(0, 0) rotate(-2deg); }
+    50%      { transform: translate(-9px, 12px) rotate(3deg); }
+  }
+
+  @keyframes wing-l {
+    0%, 100% { transform: scaleY(1); }
+    50%      { transform: scaleY(.52); }
+  }
+
+  @keyframes wing-r {
+    0%, 100% { transform: scaleY(1); }
+    50%      { transform: scaleY(.52); }
+  }
+
+  /* gothic footer: graveyard */
+  .gothic-floor {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    display: none;
+    height: 190px;
+    pointer-events: none;
+  }
+
+  html[data-theme="gothic"] .gothic-floor { display: block; }
+  html[data-theme="gothic"] .floor,
+  html[data-theme="gothic"] .space-floor { display: none; }
+  html[data-theme="gothic"] .footer { padding-bottom: 200px; }
+
+  .crypt-ground {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 56px;
+    background:
+      radial-gradient(16px 5px at 16% 18px, #040103 60%, transparent 62%),
+      radial-gradient(22px 6px at 48% 32px, #040103 60%, transparent 62%),
+      radial-gradient(14px 5px at 74% 16px, #040103 60%, transparent 62%),
+      linear-gradient(180deg, #1c0509 0%, #0c0205 48%, #040103 100%);
+    border-top: 4px solid #3f0a13;
+  }
+
+  .crypt-fence {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 38px;
+    height: 62px;
+    opacity: .8;
+    background:
+      repeating-linear-gradient(90deg,
+        transparent 0 22px,
+        #1d070c 22px 26px,
+        transparent 26px 48px);
+  }
+
+  .crypt-fence::before,
+  .crypt-fence::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #2a0a10;
+  }
+
+  .crypt-fence::before { top: 0; }
+  .crypt-fence::after { bottom: 0; }
+
+  .grave {
+    position: absolute;
+    bottom: 38px;
+    filter: drop-shadow(0 7px 0 rgba(0, 0, 0, .55));
+  }
+
+  .grave-a { left: 6%; width: 66px; }
+  .grave-b { left: 18%; bottom: 34px; width: 46px; opacity: .85; }
+  .grave-c { right: 8%; width: 60px; }
+
+  .grave-owl {
+    position: absolute;
+    right: 10.4%;
+    bottom: 101px;
+    width: 50px;
+    filter: drop-shadow(0 0 8px rgba(255, 54, 54, .22));
+  }
+
+  .grave-raven {
+    position: absolute;
+    left: 7.2%;
+    bottom: 116px;
+    width: 46px;
+    filter: drop-shadow(0 0 3px rgba(232, 220, 200, .18));
+  }
+
+  .blood-drip {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 42px;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(5px 20px at 7% 0, #8f0d1b 62%, transparent 64%),
+      radial-gradient(3px 27px at 15% 0, #8f0d1b 62%, transparent 64%),
+      radial-gradient(6px 17px at 24% 0, #8f0d1b 62%, transparent 64%),
+      radial-gradient(4px 32px at 34% 0, #8f0d1b 62%, transparent 64%),
+      radial-gradient(3px 14px at 43% 0, #8f0d1b 62%, transparent 64%),
+      radial-gradient(5px 24px at 54% 0, #8f0d1b 62%, transparent 64%),
+      radial-gradient(3px 19px at 63% 0, #8f0d1b 62%, transparent 64%),
+      radial-gradient(6px 30px at 73% 0, #8f0d1b 62%, transparent 64%),
+      radial-gradient(4px 16px at 82% 0, #8f0d1b 62%, transparent 64%),
+      radial-gradient(3px 26px at 91% 0, #8f0d1b 62%, transparent 64%);
+  }
+
+  html[data-theme="gothic"] .blood-drip { display: block; }
+
+  .crypt-bones {
+    position: absolute;
+    left: 35%;
+    bottom: 20px;
+    width: 120px;
+    opacity: .9;
+  }
+
+  .crypt-candle {
+    position: absolute;
+    left: 28%;
+    bottom: 38px;
+    width: 18px;
+  }
+
+  .crypt-candle .flame {
+    animation: candle-flicker 2.4s steps(2, end) infinite;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+  }
+
+  @keyframes candle-flicker {
+    0%, 100% { transform: scaleY(1); opacity: 1; }
+    50%      { transform: scaleY(.72); opacity: .75; }
+  }
+
+  /* gothic palette */
+  html[data-theme="gothic"] {
+    --sea-base: #050103;
+    --panel: rgba(20, 4, 8, .8);
+    --panel-solid: #140408;
+    --edge: #5a1019;
+    --edge-soft: rgba(255, 60, 70, .2);
+    --ink: #f4e9dc;
+    --ink-dim: #b9a298;
+    --sun: #d91f36;
+    --coral: #ff5a45;
+    --foam: #eadbc6;
+    --biolum: #ff5a5a;
+    --jelly: #8c1c2b;
+    --kelp: #d8c4b0;
+    --shadow: rgba(0, 0, 0, .82);
+  }
+
+  html[data-theme="gothic"] body { background: #050103; }
+
+  html[data-theme="gothic"] ::selection { background: #b3121e; color: #f4e9dc; }
+
+  html[data-theme="gothic"] .grain {
+    opacity: .16;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 70, 70, .05) 0 1px,
+      transparent 1px 4px
+    );
+  }
+
+  html[data-theme="gothic"] .vignette {
+    background: radial-gradient(ellipse 88% 66% at 50% 42%, transparent 44%, rgba(2, 0, 2, .82) 100%);
+  }
+
+  html[data-theme="gothic"] .progress {
+    background: linear-gradient(90deg, #5c0a13, #d91f36, #ff5a45);
+  }
+
+  html[data-theme="gothic"] .nav--deep {
+    background: rgba(7, 1, 3, .92);
+    border-bottom-color: rgba(200, 30, 45, .3);
+  }
+
+  html[data-theme="gothic"] .brand span { color: #b9a298; }
+  html[data-theme="gothic"] #brandMode { color: #ff5a5a; }
+
+  html[data-theme="gothic"] .status li {
+    border-color: rgba(220, 60, 70, .28);
+    background: rgba(18, 3, 7, .62);
+  }
+
+  html[data-theme="gothic"] .status li.live {
+    color: #f4e9dc;
+    border-color: rgba(200, 30, 45, .55);
+  }
+
+  html[data-theme="gothic"] .status li.live::before { color: #ff4a4a; }
+
+  html[data-theme="gothic"] .depth-tag {
+    color: #ff6a6a;
+    border-color: rgba(200, 30, 45, .42);
+    background: rgba(14, 2, 5, .72);
+  }
+
+  html[data-theme="gothic"] .gauge { display: none; }
+
+  html[data-theme="gothic"] .ticker {
+    background: rgba(16, 3, 6, .8);
+    border-color: rgba(200, 30, 45, .24);
+  }
+
+  html[data-theme="gothic"] .ticker-track span::after { color: #d91f36; }
+
+  html[data-theme="gothic"] .spec .row { border-bottom-color: rgba(220, 80, 90, .16); }
+
+  html[data-theme="gothic"] .workbench::after { background: none; }
+
+  html[data-theme="gothic"] .workbench figcaption {
+    background: rgba(10, 1, 3, .85);
+    border-top-color: rgba(200, 30, 45, .24);
+  }
+
+  html[data-theme="gothic"] .rail-dot { border-color: rgba(220, 90, 100, .4); }
+
+  html[data-theme="gothic"] .rail-dot[aria-current="true"] {
+    box-shadow: 0 0 9px rgba(220, 30, 45, .55);
+  }
+
+  html[data-theme="gothic"] .card-links { border-top-color: rgba(220, 80, 90, .16); }
+
+  html[data-theme="gothic"] .card-media { background: #0d0306; }
+
+  html[data-theme="gothic"] .card-media::after { background: none; }
+
+  html[data-theme="gothic"] .card-media figcaption { background: rgba(10, 1, 3, .85); }
+
+  html[data-theme="gothic"] .tags li { border-color: rgba(220, 90, 100, .22); }
+
+  html[data-theme="gothic"] .chips li {
+    background: rgba(14, 2, 5, .78);
+    border-color: rgba(220, 90, 100, .22);
+  }
+
+  html[data-theme="gothic"] .chips li:nth-child(3n+1) { border-color: rgba(232, 220, 200, .4); }
+  html[data-theme="gothic"] .chips li:nth-child(3n+2) { border-color: rgba(217, 31, 54, .48); }
+  html[data-theme="gothic"] .chips li:nth-child(3n+3) { border-color: rgba(140, 28, 43, .6); }
+
+  html[data-theme="gothic"] .footer {
+    border-top-color: rgba(200, 30, 45, .55);
+    background: linear-gradient(180deg, rgba(16, 3, 6, .5), rgba(3, 1, 2, .92));
+  }
+
+  html[data-theme="gothic"] .footer-links a {
+    border-color: rgba(220, 90, 100, .24);
+    background: rgba(14, 2, 5, .6);
+  }
+
+  html[data-theme="gothic"] .colophon { border-top-color: rgba(220, 80, 90, .16); }
+
+  html[data-theme="gothic"] h1 { text-shadow: 5px 5px 0 rgba(0, 0, 0, .8), 0 0 26px rgba(170, 10, 26, .22); }
+  html[data-theme="gothic"] h2 { text-shadow: 3px 3px 0 rgba(0, 0, 0, .8); }
+
+  html[data-theme="gothic"] .tagline,
+  html[data-theme="gothic"] .hero-note,
+  html[data-theme="gothic"] .eyebrow { text-shadow: 2px 2px 0 rgba(0, 0, 0, .7); }
+
+  html[data-theme="gothic"] .workbench img,
+  html[data-theme="gothic"] .card-media img {
+    filter: none;
+  }
+
+  html[data-theme="gothic"] .section-num { color: #f4e9dc; }
+  html[data-theme="gothic"] .card-badge { background: #b3121e; color: #f4e9dc; }
+  html[data-theme="gothic"] .btn-primary { color: #f4e9dc; }
+  html[data-theme="gothic"] .btn-ghost { background: rgba(20, 3, 6, .55); }
+  html[data-theme="gothic"] .nav-links .btn-mini { color: #f4e9dc; }
+  html[data-theme="gothic"] .nav-links .btn-mini:hover { color: #140408; }
+  html[data-theme="gothic"] .skip { color: #f4e9dc; }
+  html[data-theme="gothic"] .theme-switch { background: rgba(20, 3, 6, .75); }
+  html[data-theme="gothic"] .ts-opt:hover { background: rgba(217, 31, 54, .16); }
+  html[data-theme="gothic"] .ts-opt[aria-checked="true"] { background: #b3121e; color: #f4e9dc; }
+  html[data-theme="gothic"] .ts-opt[aria-checked="true"]:hover { color: #f4e9dc; }
+
+  @media (max-width: 780px) {
+    .blood-moon { top: 2%; right: -8%; width: 150px; opacity: .62; }
+    .hero-skull { top: 16%; right: -6%; width: 78px; opacity: .42; animation: none; }
+    .bat-a { top: 13%; right: 11%; width: 36px; }
+    .bat-b { display: none; }
+    .bat-c { top: 22%; right: 24%; width: 22px; opacity: .5; }
+    .gothic-floor { height: 160px; }
+    html[data-theme="gothic"] .footer { padding-bottom: 172px; }
+    .grave-a { left: 2%; width: 52px; }
+    .grave-b { display: none; }
+    .grave-c { right: 2%; width: 48px; }
+    .grave-owl { right: 4.6%; bottom: 82px; width: 38px; }
+    .grave-raven { left: 3.6%; bottom: 96px; width: 34px; }
+    .crypt-bones { left: 33%; bottom: 18px; width: 86px; }
+    .crypt-candle { left: 25%; bottom: 38px; width: 15px; }
+    .spider-rig {
+      left: 3px;
+      width: 15px;
+      --silk-end: calc(100vh - clamp(54px, 8vh, 92px) - 118px);
+    }
+    .spider-depth { font-size: .38rem; padding: 1px 4px; }
+  }
+
   /* --- reveal on scroll ------------------------------------------- */
   .reveal {
     opacity: 0;
@@ -1675,7 +2210,7 @@
   }
 
   @media print {
-    .sea, .space, .vignette, .grain, .progress, .nav, .ticker, .gauge, .shore, .floor, .space-floor, .hero-art, .space-art, .theme-switch { display: none !important; }
+    .sea, .space, .crypt, .crypt-web, .vignette, .grain, .progress, .nav, .ticker, .gauge, .spider-rig, .shore, .floor, .space-floor, .gothic-floor, .hero-art, .space-art, .gothic-art, .theme-switch { display: none !important; }
     body { background: #fff; color: #000; }
     .panel, .card { box-shadow: none; border-color: #999; background: #fff; }
     .card p, .prose p, .spec dd { color: #222; }
@@ -1692,6 +2227,12 @@
   <div class="stars stars-bright" data-space-layer="bright"></div>
   <span class="space-shooting"></span>
 </div>
+<div class="crypt" aria-hidden="true">
+  <div class="crypt-vault"></div>
+  <div class="crypt-glow" data-gothic-layer="glow"></div>
+  <div class="crypt-fog" data-gothic-layer="fog"></div>
+</div>
+<svg class="crypt-web" viewBox="0 0 200 200" shape-rendering="crispEdges" aria-hidden="true"><use href="#px-web-a"/></svg>
 <div class="sea" aria-hidden="true">
   <div class="sea-layer l-abyss" data-layer="abyss"></div>
   <div class="sea-layer l-deep" data-layer="deep"></div>
@@ -1757,6 +2298,41 @@
       </g>
       <rect x="9" y="5" width="1" height="1" fill="#02121c"/>
     </symbol>
+    <symbol id="px-web-a" viewBox="0 0 200 200">
+      <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square">
+        <path d="M3 3L106 9L197 12"/>
+        <path d="M3 3L92 32L197 67"/>
+        <path d="M3 3L114 83L197 145"/>
+        <path d="M3 3L99 119L161 197"/>
+        <path d="M3 3L47 107L85 197"/>
+        <path d="M3 3L17 105L32 197"/>
+        <path d="M3 3L6 97L12 197"/>
+        <path d="M42 5L40 10L42 16"/>
+        <path d="M42 16L40 22L42 31"/>
+        <path d="M42 31L40 38L34 42"/>
+        <path d="M35 42L26 41L20 42"/>
+        <path d="M19 41L13 40L9 41"/>
+        <path d="M73 6L70 15L73 26"/>
+        <path d="M74 26L71 38L74 55"/>
+        <path d="M61 74L44 70L33 74"/>
+        <path d="M32 73L22 69L13 73"/>
+        <path d="M14 73L10 70L6 73"/>
+        <path d="M105 37L101 54L105 78"/>
+        <path d="M84 103L60 97L45 103"/>
+        <path d="M45 103L30 99L18 103"/>
+        <path d="M18 103L12 99L7 103"/>
+        <path d="M135 9L128 26L135 47"/>
+        <path d="M134 46L127 67L134 98"/>
+        <path d="M136 100L129 123L111 136"/>
+        <path d="M110 134L78 127L58 134"/>
+        <path d="M59 135L38 128L23 135"/>
+        <path d="M23 134L15 127L9 134"/>
+        <path d="M165 11L157 32L165 57"/>
+        <path d="M135 165L96 158L72 165"/>
+        <path d="M72 166L47 161L28 166"/>
+        <path d="M28 166L18 161L10 166"/>
+      </g>
+    </symbol>
   </defs>
 </svg>
 
@@ -1770,21 +2346,55 @@
   </div>
 </aside>
 
+<div class="spider-rig" aria-hidden="true">
+  <span class="spider-silk"></span>
+  <svg class="crypt-spider" viewBox="0 0 40 38" shape-rendering="crispEdges">
+    <g fill="#140408" stroke="#7c0c18" stroke-width="1">
+      <rect x="14" y="1" width="12" height="10"/>
+      <rect x="16" y="11" width="8" height="6"/>
+    </g>
+    <g fill="#b9a89a">
+      <rect x="8" y="2" width="6" height="2"/>
+      <rect x="26" y="2" width="6" height="2"/>
+      <rect x="6" y="7" width="8" height="2"/>
+      <rect x="26" y="7" width="8" height="2"/>
+      <rect x="8" y="12" width="6" height="2"/>
+      <rect x="26" y="12" width="6" height="2"/>
+      <rect x="10" y="16" width="4" height="2"/>
+      <rect x="26" y="16" width="4" height="2"/>
+    </g>
+    <g fill="#d6cdbe">
+      <rect x="14" y="1" width="12" height="1"/>
+      <rect x="18" y="4" width="4" height="1"/>
+    </g>
+    <g fill="#ff3b3b">
+      <rect x="17" y="13" width="2" height="2"/>
+      <rect x="21" y="13" width="2" height="2"/>
+      <rect x="19" y="8" width="2" height="2"/>
+    </g>
+  </svg>
+  <span class="spider-depth"><span>0 m</span></span>
+</div>
+
 <header class="nav" id="nav">
   <div class="wrap">
-    <a class="brand" href="#top">DK<span>://</span><span id="brandMode" data-ocean="DIVE" data-space="ORBIT">DIVE</span></a>
+    <a class="brand" href="#top">DK<span>://</span><span id="brandMode" data-ocean="DIVE" data-space="ORBIT" data-gothic="CRYPT">DIVE</span></a>
     <nav class="nav-links" aria-label="Primary">
       <a href="#about">About</a>
       <a href="#projects">Projects</a>
       <a href="#research">Research</a>
       <a href="#stack">Technical skills</a>
-      <button class="theme-switch" id="themeSwitch" type="button" role="switch" aria-checked="false" aria-label="Space theme" title="Switch to space theme">
-        <span class="ts-knob" aria-hidden="true"></span>
-        <span class="ts-icons" aria-hidden="true">
-          <span class="ts-icon ts-wave"><svg width="18" height="12" viewBox="0 0 18 12" shape-rendering="crispEdges"><g fill="currentColor"><rect x="0" y="6" width="3" height="2"/><rect x="3" y="3" width="3" height="2"/><rect x="6" y="6" width="3" height="2"/><rect x="9" y="3" width="3" height="2"/><rect x="12" y="6" width="3" height="2"/><rect x="15" y="9" width="3" height="2"/></g></svg></span>
-          <span class="ts-icon ts-star"><svg width="14" height="14" viewBox="0 0 14 14" shape-rendering="crispEdges"><g fill="currentColor"><rect x="6" y="0" width="2" height="4"/><rect x="6" y="10" width="2" height="4"/><rect x="0" y="6" width="4" height="2"/><rect x="10" y="6" width="4" height="2"/><rect x="4" y="4" width="2" height="2"/><rect x="8" y="4" width="2" height="2"/><rect x="4" y="8" width="2" height="2"/><rect x="8" y="8" width="2" height="2"/></g></svg></span>
-        </span>
-      </button>
+      <div class="theme-switch" id="themeSwitch" role="radiogroup" aria-label="Colour theme">
+        <button class="ts-opt" type="button" role="radio" aria-checked="true" tabindex="0" data-theme-set="ocean" aria-label="Ocean theme" title="Ocean theme">
+          <svg width="16" height="11" viewBox="0 0 18 12" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="0" y="6" width="3" height="2"/><rect x="3" y="3" width="3" height="2"/><rect x="6" y="6" width="3" height="2"/><rect x="9" y="3" width="3" height="2"/><rect x="12" y="6" width="3" height="2"/><rect x="15" y="9" width="3" height="2"/></g></svg>
+        </button>
+        <button class="ts-opt" type="button" role="radio" aria-checked="false" tabindex="-1" data-theme-set="space" aria-label="Space theme" title="Space theme">
+          <svg width="13" height="13" viewBox="0 0 14 14" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="6" y="0" width="2" height="4"/><rect x="6" y="10" width="2" height="4"/><rect x="0" y="6" width="4" height="2"/><rect x="10" y="6" width="4" height="2"/><rect x="4" y="4" width="2" height="2"/><rect x="8" y="4" width="2" height="2"/><rect x="4" y="8" width="2" height="2"/><rect x="8" y="8" width="2" height="2"/></g></svg>
+        </button>
+        <button class="ts-opt" type="button" role="radio" aria-checked="false" tabindex="-1" data-theme-set="gothic" aria-label="Gothic theme" title="Gothic theme">
+          <svg width="13" height="13" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="4" y="1" width="8" height="2"/><rect x="3" y="3" width="10" height="6"/><rect x="4" y="9" width="8" height="3"/><rect x="5" y="12" width="6" height="2"/></g><g fill="#140408"><rect x="5" y="5" width="2" height="2"/><rect x="9" y="5" width="2" height="2"/><rect x="7" y="8" width="2" height="2"/></g></svg>
+        </button>
+      </div>
       <a class="btn-mini nav-link-optional" href="https://www.linkedin.com/in/dhruvkotian/" target="_blank" rel="noopener">LinkedIn &#8599;</a>
       <a class="btn-mini" href="https://github.com/dhruvkotian" target="_blank" rel="noopener">GitHub &#8599;</a>
     </nav>
@@ -1938,21 +2548,182 @@
       </svg>
     </div>
 
+    <div class="gothic-art" aria-hidden="true">
+      <svg class="blood-moon" viewBox="0 0 160 160" shape-rendering="crispEdges">
+        <g fill="#7c0a14">
+          <rect x="50" y="0" width="60" height="10"/>
+          <rect x="30" y="10" width="100" height="10"/>
+          <rect x="20" y="20" width="120" height="10"/>
+          <rect x="10" y="30" width="140" height="10"/>
+          <rect x="10" y="40" width="140" height="10"/>
+          <rect x="0" y="50" width="160" height="10"/>
+          <rect x="0" y="60" width="160" height="10"/>
+          <rect x="0" y="70" width="160" height="10"/>
+          <rect x="0" y="80" width="160" height="10"/>
+          <rect x="0" y="90" width="160" height="10"/>
+          <rect x="10" y="100" width="140" height="10"/>
+          <rect x="10" y="110" width="140" height="10"/>
+          <rect x="20" y="120" width="120" height="10"/>
+          <rect x="30" y="130" width="100" height="10"/>
+          <rect x="50" y="140" width="60" height="10"/>
+        </g>
+        <g fill="#b3121e">
+          <rect x="40" y="10" width="80" height="10"/>
+          <rect x="30" y="20" width="100" height="10"/>
+          <rect x="20" y="30" width="120" height="10"/>
+          <rect x="20" y="40" width="120" height="10"/>
+          <rect x="10" y="50" width="140" height="10"/>
+          <rect x="10" y="60" width="140" height="10"/>
+          <rect x="10" y="70" width="140" height="10"/>
+          <rect x="10" y="80" width="140" height="10"/>
+          <rect x="10" y="90" width="140" height="10"/>
+          <rect x="20" y="100" width="120" height="10"/>
+          <rect x="20" y="110" width="120" height="10"/>
+          <rect x="30" y="120" width="100" height="10"/>
+          <rect x="40" y="130" width="80" height="10"/>
+        </g>
+        <g fill="#7e0812">
+          <rect x="44" y="40" width="18" height="12"/>
+          <rect x="92" y="34" width="14" height="10"/>
+          <rect x="102" y="88" width="22" height="14"/>
+          <rect x="60" y="104" width="14" height="10"/>
+          <rect x="76" y="66" width="10" height="8"/>
+          <rect x="34" y="80" width="12" height="8"/>
+        </g>
+        <g fill="#d62032">
+          <rect x="40" y="30" width="12" height="6"/>
+          <rect x="58" y="22" width="18" height="6"/>
+          <rect x="30" y="92" width="10" height="6"/>
+          <rect x="90" y="116" width="16" height="6"/>
+        </g>
+      </svg>
+
+      <svg class="hero-skull" viewBox="0 0 120 110" shape-rendering="crispEdges">
+        <g fill="#e8dcc8">
+          <rect x="34" y="6" width="52" height="8"/>
+          <rect x="24" y="14" width="72" height="40"/>
+          <rect x="18" y="26" width="12" height="24"/>
+          <rect x="90" y="26" width="12" height="24"/>
+          <rect x="28" y="54" width="64" height="18"/>
+          <rect x="38" y="72" width="44" height="14"/>
+          <rect x="40" y="86" width="40" height="14"/>
+        </g>
+        <g fill="#c9b9a2">
+          <rect x="24" y="14" width="8" height="40"/>
+          <rect x="28" y="54" width="8" height="18"/>
+          <rect x="38" y="72" width="6" height="14"/>
+          <rect x="40" y="86" width="6" height="14"/>
+        </g>
+        <g fill="#100305">
+          <rect x="34" y="32" width="18" height="16"/>
+          <rect x="68" y="32" width="18" height="16"/>
+          <rect x="56" y="52" width="8" height="10"/>
+        </g>
+        <g fill="#ff3b3b">
+          <rect x="40" y="38" width="6" height="6"/>
+          <rect x="74" y="38" width="6" height="6"/>
+        </g>
+        <g fill="#7d6a58">
+          <rect x="52" y="14" width="2" height="10"/>
+          <rect x="54" y="24" width="2" height="6"/>
+          <rect x="82" y="48" width="2" height="8"/>
+          <rect x="47" y="88" width="2" height="12"/>
+          <rect x="54" y="88" width="2" height="12"/>
+          <rect x="61" y="88" width="2" height="12"/>
+          <rect x="68" y="88" width="2" height="12"/>
+          <rect x="75" y="88" width="2" height="12"/>
+        </g>
+      </svg>
+
+      <svg class="bat bat-a" viewBox="0 0 40 20" shape-rendering="crispEdges">
+        <g class="wing wing-l" fill="currentColor">
+          <rect x="0" y="6" width="5" height="3"/>
+          <rect x="5" y="3" width="5" height="4"/>
+          <rect x="10" y="6" width="6" height="5"/>
+        </g>
+        <g class="wing wing-r" fill="currentColor">
+          <rect x="24" y="6" width="6" height="5"/>
+          <rect x="30" y="3" width="5" height="4"/>
+          <rect x="35" y="6" width="5" height="3"/>
+        </g>
+        <g fill="currentColor">
+          <rect x="15" y="4" width="10" height="8"/>
+          <rect x="16" y="1" width="3" height="4"/>
+          <rect x="21" y="1" width="3" height="4"/>
+          <rect x="18" y="12" width="2" height="3"/>
+          <rect x="21" y="12" width="2" height="3"/>
+        </g>
+        <g fill="#ff4a4a">
+          <rect x="17" y="6" width="2" height="2"/>
+          <rect x="21" y="6" width="2" height="2"/>
+        </g>
+      </svg>
+
+      <svg class="bat bat-b" viewBox="0 0 40 20" shape-rendering="crispEdges">
+        <g class="wing wing-l" fill="currentColor">
+          <rect x="0" y="6" width="5" height="3"/>
+          <rect x="5" y="3" width="5" height="4"/>
+          <rect x="10" y="6" width="6" height="5"/>
+        </g>
+        <g class="wing wing-r" fill="currentColor">
+          <rect x="24" y="6" width="6" height="5"/>
+          <rect x="30" y="3" width="5" height="4"/>
+          <rect x="35" y="6" width="5" height="3"/>
+        </g>
+        <g fill="currentColor">
+          <rect x="15" y="4" width="10" height="8"/>
+          <rect x="16" y="1" width="3" height="4"/>
+          <rect x="21" y="1" width="3" height="4"/>
+          <rect x="18" y="12" width="2" height="3"/>
+          <rect x="21" y="12" width="2" height="3"/>
+        </g>
+        <g fill="#ff4a4a">
+          <rect x="17" y="6" width="2" height="2"/>
+          <rect x="21" y="6" width="2" height="2"/>
+        </g>
+      </svg>
+
+      <svg class="bat bat-c" viewBox="0 0 40 20" shape-rendering="crispEdges">
+        <g class="wing wing-l" fill="currentColor">
+          <rect x="0" y="6" width="5" height="3"/>
+          <rect x="5" y="3" width="5" height="4"/>
+          <rect x="10" y="6" width="6" height="5"/>
+        </g>
+        <g class="wing wing-r" fill="currentColor">
+          <rect x="24" y="6" width="6" height="5"/>
+          <rect x="30" y="3" width="5" height="4"/>
+          <rect x="35" y="6" width="5" height="3"/>
+        </g>
+        <g fill="currentColor">
+          <rect x="15" y="4" width="10" height="8"/>
+          <rect x="16" y="1" width="3" height="4"/>
+          <rect x="21" y="1" width="3" height="4"/>
+          <rect x="18" y="12" width="2" height="3"/>
+          <rect x="21" y="12" width="2" height="3"/>
+        </g>
+        <g fill="#ff4a4a">
+          <rect x="17" y="6" width="2" height="2"/>
+          <rect x="21" y="6" width="2" height="2"/>
+        </g>
+      </svg>
+    </div>
+
     <div class="wrap">
       <div class="hero-copy">
         <p class="pixel-label eyebrow">[ MECHATRONICS &middot; EDGE AI &middot; EMBEDDED ]</p>
         <h1>DHRUV<br />KOTIAN<span class="cursor" aria-hidden="true"></span></h1>
         <p class="tagline">
           I build devices that <strong>sense, think and act</strong> at the edge:
-          ESP32 firmware, on-device machine learning, industrial telemetry and
-          sensor-driven hardware.
+          microcontroller architecture, firmware optimization, embedded
+          inference, memory-efficient computing and hardware-level
+          experimentation.
         </p>
 
         <ul class="status" aria-label="Current status">
-          <li class="live">SYSTEMS NOMINAL</li>
-          <li>ESP32-S3</li>
-          <li>TINYML</li>
-          <li>MODBUS / RS485</li>
+          <li class="live">ENGINEERING / ACTIVE BUILDS</li>
+          <li>ON-DEVICE AI</li>
+          <li>ROBOTICS</li>
+          <li>SENSOR SYSTEMS</li>
           <li>VACUUM + HV</li>
         </ul>
 
@@ -1963,8 +2734,7 @@
 
         <p class="hero-note">
           Currently building <a href="https://github.com/dhruvkotian/ParoClaw" target="_blank" rel="noopener">ParoClaw</a>,
-          an ESP32-S3 local agent with a bounded set of hardware tools. HyperWatch shipped for
-          NASA Space Apps 2026: a wearable running a quantised risk model on an ESP32-S3.
+          an ESP32-S3 local agent with a bounded set of hardware tools.
         </p>
       </div>
     </div>
@@ -1983,7 +2753,7 @@
     <div class="wrap">
       <div class="section-head reveal">
         <span class="section-num">01</span>
-        <h2 data-ocean="Dive log" data-space="Flight log">Dive log</h2>
+        <h2 data-ocean="Dive log" data-space="Flight log" data-gothic="Blood ledger">Dive log</h2>
         <span class="section-label">About</span>
         <span class="depth-tag" data-ocean="&minus; 240 m" data-space="ALT 240 km">&minus; 240 m</span>
       </div>
@@ -2050,7 +2820,7 @@
     <div class="wrap">
       <div class="section-head reveal">
         <span class="section-num">02</span>
-        <h2 data-ocean="The wrecks" data-space="The derelicts">The wrecks</h2>
+        <h2 data-ocean="The wrecks" data-space="The derelicts" data-gothic="The ossuary">The wrecks</h2>
         <span class="section-label">Projects</span>
         <span class="depth-tag" data-ocean="&minus; 1 200 m" data-space="ALT 1 200 km">&minus; 1 200 m</span>
       </div>
@@ -2431,7 +3201,7 @@
     <div class="wrap">
       <div class="section-head reveal">
         <span class="section-num">04</span>
-        <h2 data-ocean="Cargo hold" data-space="Cargo bay">Cargo hold</h2>
+        <h2 data-ocean="Cargo hold" data-space="Cargo bay" data-gothic="Reliquary">Cargo hold</h2>
         <span class="section-label">Technical skills</span>
         <span class="depth-tag" data-ocean="&minus; 2 600 m" data-space="ALT 2 600 km">&minus; 2 600 m</span>
       </div>
@@ -2472,7 +3242,159 @@
   </section>
 
   <!-- ================= FOOTER ================= -->
-  <footer class="footer">
+  <footer class="footer" id="contact">
+    <div class="blood-drip" aria-hidden="true"></div>
+    <div class="gothic-floor" aria-hidden="true">
+      <div class="crypt-fence"></div>
+      <div class="crypt-ground"></div>
+
+      <svg class="grave grave-a" viewBox="0 0 80 100" shape-rendering="crispEdges">
+        <g fill="#2a1c1d">
+          <rect x="10" y="20" width="60" height="76"/>
+          <rect x="16" y="10" width="48" height="10"/>
+          <rect x="24" y="4" width="32" height="6"/>
+        </g>
+        <g fill="#4a3335">
+          <rect x="16" y="24" width="6" height="68"/>
+          <rect x="22" y="14" width="36" height="4"/>
+        </g>
+        <g fill="#6b4b4e">
+          <rect x="34" y="34" width="12" height="4"/>
+          <rect x="37" y="38" width="6" height="26"/>
+          <rect x="30" y="46" width="20" height="4"/>
+          <rect x="26" y="70" width="28" height="3"/>
+          <rect x="30" y="78" width="20" height="3"/>
+        </g>
+      </svg>
+
+      <svg class="grave grave-b" viewBox="0 0 60 80" shape-rendering="crispEdges">
+        <g fill="#241718">
+          <rect x="8" y="18" width="44" height="58"/>
+          <rect x="14" y="10" width="32" height="8"/>
+        </g>
+        <g fill="#3f2b2d">
+          <rect x="12" y="22" width="4" height="50"/>
+        </g>
+        <g fill="#6b4b4e">
+          <rect x="26" y="30" width="4" height="18"/>
+          <rect x="20" y="36" width="16" height="4"/>
+        </g>
+      </svg>
+
+      <svg class="grave grave-c" viewBox="0 0 80 100" shape-rendering="crispEdges">
+        <g fill="#2a1c1d">
+          <rect x="10" y="20" width="60" height="76"/>
+          <rect x="18" y="10" width="44" height="10"/>
+          <rect x="26" y="4" width="28" height="6"/>
+        </g>
+        <g fill="#4a3335">
+          <rect x="16" y="24" width="6" height="68"/>
+          <rect x="22" y="14" width="36" height="4"/>
+        </g>
+        <g fill="#6b4b4e">
+          <rect x="26" y="34" width="28" height="4"/>
+          <rect x="32" y="38" width="4" height="12"/>
+          <rect x="44" y="38" width="4" height="12"/>
+          <rect x="32" y="50" width="16" height="4"/>
+        </g>
+      </svg>
+
+      <svg class="grave-raven" viewBox="0 0 60 50" shape-rendering="crispEdges">
+        <g fill="#0d0306">
+          <rect x="18" y="14" width="24" height="18"/>
+          <rect x="22" y="8" width="16" height="8"/>
+          <rect x="38" y="12" width="8" height="4"/>
+          <rect x="14" y="30" width="28" height="8"/>
+          <rect x="38" y="36" width="14" height="4"/>
+          <rect x="22" y="38" width="3" height="8"/>
+          <rect x="32" y="38" width="3" height="8"/>
+        </g>
+        <g fill="#3a0a12">
+          <rect x="18" y="14" width="5" height="18"/>
+          <rect x="22" y="8" width="5" height="8"/>
+        </g>
+        <g fill="#6b5760">
+          <rect x="23" y="6" width="14" height="2"/>
+          <rect x="17" y="12" width="2" height="20"/>
+          <rect x="14" y="30" width="4" height="2"/>
+        </g>
+        <rect x="28" y="13" width="3" height="3" fill="#ff3b3b"/>
+      </svg>
+
+      <svg class="grave-owl" viewBox="0 0 70 86" shape-rendering="crispEdges">
+        <g fill="#e8dcc8">
+          <rect x="12" y="2" width="8" height="12"/>
+          <rect x="50" y="2" width="8" height="12"/>
+          <rect x="16" y="8" width="38" height="30"/>
+          <rect x="22" y="36" width="26" height="30"/>
+        </g>
+        <g fill="#c9b9a2">
+          <rect x="14" y="38" width="7" height="24"/>
+          <rect x="49" y="38" width="7" height="24"/>
+        </g>
+        <g fill="#f4e9dc">
+          <rect x="18" y="14" width="14" height="14"/>
+          <rect x="38" y="14" width="14" height="14"/>
+          <rect x="30" y="40" width="10" height="20"/>
+          <rect x="24" y="64" width="6" height="10"/>
+          <rect x="40" y="64" width="6" height="10"/>
+        </g>
+        <g fill="#0a0204">
+          <rect x="22" y="18" width="6" height="6"/>
+          <rect x="42" y="18" width="6" height="6"/>
+        </g>
+        <g fill="#ff3b3b">
+          <rect x="24" y="20" width="2" height="2"/>
+          <rect x="44" y="20" width="2" height="2"/>
+        </g>
+        <rect x="33" y="24" width="4" height="5" fill="#b3121e"/>
+        <g fill="#b9a298">
+          <rect x="26" y="38" width="18" height="2"/>
+          <rect x="24" y="46" width="22" height="2"/>
+          <rect x="26" y="54" width="18" height="2"/>
+        </g>
+        <g fill="#b3121e">
+          <rect x="24" y="66" width="2" height="6"/>
+          <rect x="34" y="66" width="2" height="6"/>
+          <rect x="44" y="66" width="2" height="6"/>
+        </g>
+      </svg>
+
+      <svg class="crypt-bones" viewBox="0 0 140 40" shape-rendering="crispEdges">
+        <g fill="#d8cbb8">
+          <rect x="8" y="16" width="58" height="7"/>
+          <rect x="0" y="10" width="12" height="10"/>
+          <rect x="0" y="20" width="12" height="10"/>
+          <rect x="62" y="10" width="12" height="10"/>
+          <rect x="62" y="20" width="12" height="10"/>
+          <rect x="70" y="25" width="56" height="7"/>
+          <rect x="64" y="19" width="12" height="10"/>
+          <rect x="64" y="29" width="12" height="10"/>
+          <rect x="122" y="19" width="12" height="10"/>
+          <rect x="122" y="29" width="12" height="10"/>
+        </g>
+        <g fill="#e8dcc8">
+          <rect x="32" y="4" width="20" height="12"/>
+          <rect x="36" y="16" width="12" height="4"/>
+        </g>
+        <g fill="#0a0204">
+          <rect x="36" y="8" width="4" height="4"/>
+          <rect x="44" y="8" width="4" height="4"/>
+          <rect x="40" y="15" width="4" height="3"/>
+        </g>
+      </svg>
+
+      <svg class="crypt-candle" viewBox="0 0 18 52" shape-rendering="crispEdges">
+        <rect x="5" y="20" width="8" height="30" fill="#d8c4b0"/>
+        <rect x="7" y="24" width="2" height="20" fill="#efe4d2"/>
+        <rect x="3" y="48" width="12" height="4" fill="#3a1a20"/>
+        <g class="flame" fill="#ff5a45">
+          <rect x="7" y="10" width="4" height="8"/>
+          <rect x="8" y="6" width="2" height="4" fill="#ffd76a"/>
+        </g>
+      </svg>
+    </div>
+
     <div class="floor" aria-hidden="true">
       <svg class="floor-coral" viewBox="0 0 120 96" shape-rendering="crispEdges">
         <g fill="#ff7a5c">
@@ -2573,7 +3495,7 @@
           <a href="https://www.linkedin.com/in/dhruvkotian/" target="_blank" rel="noopener">LinkedIn &#8599;</a>
           <a href="https://github.com/dhruvkotian" target="_blank" rel="noopener">GitHub &#8599;</a>
           <a href="https://orcid.org/0009-0000-5660-1911" target="_blank" rel="noopener">ORCID &#8599;</a>
-          <a href="#top">Surface &#8593;</a>
+          <a href="#top"><span data-ocean="Surface" data-space="Surface" data-gothic="Ascend">Surface</span> &#8593;</a>
         </div>
       </div>
 
@@ -2587,31 +3509,37 @@
 
 <script>
   // ---------------------------------------------------------------
-  // Theme switch: ocean <-> space, remembered across visits
+  // Theme switch: ocean, space or gothic, remembered across visits
   // ---------------------------------------------------------------
   (function () {
     var root = document.documentElement;
-    var btn = document.getElementById('themeSwitch');
+    var group = document.getElementById('themeSwitch');
+    var opts = group ? Array.prototype.slice.call(group.querySelectorAll('[data-theme-set]')) : [];
     var meta = document.querySelector('meta[name="theme-color"]');
     var KEY = 'dk-theme';
+    var THEMES = ['ocean', 'space', 'gothic'];
+    var META = { ocean: '#0b7494', space: '#0a0a23', gothic: '#120207' };
 
     function current() {
-      return root.getAttribute('data-theme') === 'space' ? 'space' : 'ocean';
+      var saved = root.getAttribute('data-theme');
+      return THEMES.indexOf(saved) === -1 ? 'ocean' : saved;
     }
 
     function apply(theme, persist) {
-      var space = theme === 'space';
+      if (THEMES.indexOf(theme) === -1) theme = 'ocean';
 
-      root.setAttribute('data-theme', space ? 'space' : 'ocean');
+      root.setAttribute('data-theme', theme);
 
-      if (btn) {
-        btn.setAttribute('aria-checked', space ? 'true' : 'false');
-        btn.title = space ? 'Switch to ocean theme' : 'Switch to space theme';
-      }
-      if (meta) meta.setAttribute('content', space ? '#0a0a23' : '#0b7494');
+      opts.forEach(function (opt) {
+        var on = opt.getAttribute('data-theme-set') === theme;
+        opt.setAttribute('aria-checked', on ? 'true' : 'false');
+        opt.tabIndex = on ? 0 : -1;
+      });
+
+      if (meta) meta.setAttribute('content', META[theme]);
 
       Array.prototype.forEach.call(document.querySelectorAll('[data-ocean]'), function (el) {
-        var value = el.getAttribute(space ? 'data-space' : 'data-ocean');
+        var value = el.getAttribute('data-' + theme) || el.getAttribute('data-ocean');
         if (value !== null) el.textContent = value;
       });
 
@@ -2619,13 +3547,42 @@
         try { window.localStorage.setItem(KEY, theme); } catch (e) {}
       }
 
-      // Let the scroll handler refresh the gauge units and star parallax.
+      // Let the scroll handler refresh the gauge units and parallax.
       document.dispatchEvent(new CustomEvent('dk:theme'));
     }
 
-    if (btn) {
-      btn.addEventListener('click', function () {
-        apply(current() === 'space' ? 'ocean' : 'space', true);
+    function choose(theme, focus) {
+      apply(theme, true);
+      if (focus) {
+        var next = document.querySelector('[data-theme-set="' + theme + '"]');
+        if (next) next.focus();
+      }
+    }
+
+    opts.forEach(function (opt) {
+      opt.addEventListener('click', function () {
+        choose(opt.getAttribute('data-theme-set'), false);
+      });
+    });
+
+    if (group) {
+      group.addEventListener('keydown', function (e) {
+        var key = e.key;
+        if (key !== 'ArrowRight' && key !== 'ArrowDown' &&
+            key !== 'ArrowLeft' && key !== 'ArrowUp' &&
+            key !== 'Home' && key !== 'End') return;
+
+        e.preventDefault();
+
+        var index = opts.indexOf(document.activeElement);
+        if (index === -1) index = THEMES.indexOf(current());
+
+        if (key === 'Home') index = 0;
+        else if (key === 'End') index = THEMES.length - 1;
+        else if (key === 'ArrowRight' || key === 'ArrowDown') index = (index + 1) % THEMES.length;
+        else index = (index - 1 + THEMES.length) % THEMES.length;
+
+        choose(THEMES[index], true);
       });
     }
 
@@ -2660,6 +3617,11 @@
       bright: document.querySelector('[data-space-layer="bright"]')
     };
 
+    var gothic = {
+      glow: document.querySelector('[data-gothic-layer="glow"]'),
+      fog: document.querySelector('[data-gothic-layer="fog"]')
+    };
+
     function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
     function ramp(v, a, b) { return clamp((v - a) / (b - a), 0, 1); }
     function setOpacity(el, v) { if (el) el.style.opacity = v.toFixed(3); }
@@ -2668,9 +3630,9 @@
     var maxScroll = 0;
     var viewportH = 0;
     var lastP = -1;
-    var lastSpace = null;
+    var lastTheme = null;
     var lastAmount = -1;
-    var lastGaugeSpace = null;
+    var lastGaugeTheme = null;
     var navDeep = null;
     var gaugeVisible = true;
     var nf = null;
@@ -2692,19 +3654,20 @@
 
     function update(force) {
       var p = maxScroll > 0 ? clamp(doc.scrollTop / maxScroll, 0, 1) : 0;
-      var space = doc.getAttribute('data-theme') === 'space';
+      var theme = doc.getAttribute('data-theme');
+      if (theme !== 'space' && theme !== 'gothic') theme = 'ocean';
 
-      if (!force && p === lastP && space === lastSpace) {
+      if (!force && p === lastP && theme === lastTheme) {
         ticking = false;
         return;
       }
       lastP = p;
-      lastSpace = space;
+      lastTheme = theme;
 
       if (bar) bar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
 
       // only touch the layers for the theme that is actually visible
-      if (!space) {
+      if (theme === 'ocean') {
         setOpacity(layers.surface, 1 - ramp(p, .03, .15));
         setOpacity(layers.rays, 1 - ramp(p, .01, .09));
         setOpacity(layers.mid, ramp(p, .005, .05) * (1 - ramp(p, .52, .74)));
@@ -2712,27 +3675,30 @@
         setOpacity(layers.abyss, ramp(p, .62, .86));
         if (layers.bubbles) layers.bubbles.style.opacity = (0.85 - p * 0.55).toFixed(3);
         setOpacity(layers.fish, ramp(p, .02, .12) * (1 - ramp(p, .72, 1) * .3));
-      } else {
+      } else if (theme === 'space') {
         if (stars.far) stars.far.style.transform = 'translate3d(0,' + (-p * 22).toFixed(1) + 'px,0)';
         if (stars.near) stars.near.style.transform = 'translate3d(0,' + (-p * 54).toFixed(1) + 'px,0)';
         if (stars.bright) stars.bright.style.transform = 'translate3d(0,' + (-p * 96).toFixed(1) + 'px,0)';
+      } else {
+        if (gothic.glow) gothic.glow.style.opacity = (0.55 + p * 0.3).toFixed(3);
+        if (gothic.fog) gothic.fog.style.transform = 'translate3d(0,' + (-p * 36).toFixed(1) + 'px,0)';
       }
 
       // gauge: metres below the surface, or kilometres above it
-      if (gaugeVisible) {
+      if (gaugeVisible && theme !== 'gothic') {
         if (gauge) gauge.style.setProperty('--d', p.toFixed(4));
 
-        var unit = space ? 'km' : 'm';
-        var label = space ? 'ALT' : 'DEPTH';
+        var unit = theme === 'space' ? 'km' : 'm';
+        var label = theme === 'space' ? 'ALT' : 'DEPTH';
         if (gaugeUnit && gaugeUnit.textContent !== unit) gaugeUnit.textContent = unit;
         if (gaugeLabel && gaugeLabel.textContent !== label) gaugeLabel.textContent = label;
 
         if (depthVal) {
-          var amount = Math.round(p * (space ? 420 : 3800));
-          if (force || amount !== lastAmount || space !== lastGaugeSpace) {
+          var amount = Math.round(p * (theme === 'space' ? 420 : 3800));
+          if (force || amount !== lastAmount || theme !== lastGaugeTheme) {
             depthVal.textContent = nf ? nf.format(amount) : String(amount);
             lastAmount = amount;
-            lastGaugeSpace = space;
+            lastGaugeTheme = theme;
           }
         }
       }
