@@ -2383,6 +2383,7 @@
       <a href="#about">About</a>
       <a href="#projects">Projects</a>
       <a href="#research">Research</a>
+      <a href="esp32s3.html">ESP32-S3</a>
       <a href="#stack">Technical skills</a>
       <div class="theme-switch" id="themeSwitch" role="radiogroup" aria-label="Colour theme">
         <button class="ts-opt" type="button" role="radio" aria-checked="true" tabindex="0" data-theme-set="ocean" aria-label="Ocean theme" title="Ocean theme">
@@ -3073,8 +3074,9 @@
       </div>
       <p class="section-sub reveal" style="margin-bottom:32px">
         Open-ended bench work: hardware still being characterised rather than shipped. A
-        hand-built vacuum chamber, a Linux bring-up on the ESP32-S3, and a vibration monitor
-        that runs its own dashboard.
+        hand-built vacuum chamber, a Linux bring-up on the ESP32-S3, a vibration monitor
+        that runs its own dashboard, and an int8 transformer runtime with a
+        <a href="esp32s3.html" style="color:var(--sun)">full project page</a>.
       </p>
 
       <div class="rail-bar reveal" data-rail-bar="researchRail" data-rail-noun="Research project">
@@ -3082,7 +3084,7 @@
           <div class="rail-nav">
             <button class="rail-btn" type="button" data-rail-prev aria-label="Previous research project" aria-controls="researchRail"></button>
             <button class="rail-btn" type="button" data-rail-next aria-label="Next research project" aria-controls="researchRail"></button>
-            <span class="rail-count" aria-hidden="true"><span data-rail-now>01</span> / <span data-rail-total>03</span></span>
+            <span class="rail-count" aria-hidden="true"><span data-rail-now>01</span> / <span data-rail-total>04</span></span>
           </div>
           <span class="rail-hint">SLIDE DECK</span>
         </div>
@@ -3188,6 +3190,41 @@
             </ul>
             <div class="card-links">
               <a href="https://github.com/dhruvkotian/dc-fan-vibration-monitor" target="_blank" rel="noopener">Repository</a>
+            </div>
+          </div>
+        </article>
+        <!-- ESP32-S3 INT8 Transformer -->
+        <article class="card reveal">
+          <div class="card-media">
+            <img src="img/esp32s3-kv.svg" width="760" height="475" loading="lazy" decoding="async"
+                 alt="Schematic of the ESP32-S3 memory hierarchy: 512 KB SRAM holding int8 weights and a 16-position fp32 hot window, and 8 MB PSRAM holding a 245,760-byte int8 KV cache." />
+            <figcaption>INT8 KV, 512 CTX</figcaption>
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <span class="card-idx">[04]</span>
+              <span class="card-badge sun">INT8 / SIMD</span>
+            </div>
+            <h3>ESP32-S3 INT8 Transformer</h3>
+            <p>
+              A 260K-parameter decoder running entirely on an ESP32-S3, with the
+              <strong>KV cache stored as int8 in PSRAM</strong> and attention mapped onto the
+              128-bit PIE integer SIMD unit. At 512 context it reaches
+              <strong>166.6 decode forwards/s</strong>, 2.898&times; the same-tree fp32 baseline.
+            </p>
+            <ul class="card-list">
+              <li>int8 KV cache with an fp32 SRAM hot window</li>
+              <li>128-bit PIE attention kernels and dual-core head split</li>
+              <li>512-token context, batch size one, fully offline</li>
+              <li>Raw logs, negative results and the exact build config</li>
+            </ul>
+            <ul class="tags">
+              <li>ESP32-S3</li><li>int8</li><li>KV cache</li><li>SIMD</li><li>PSRAM</li>
+            </ul>
+            <div class="card-links">
+              <a href="esp32s3.html">Project page</a>
+              <a href="https://github.com/dhruvkotian/esp32s3-inference" target="_blank" rel="noopener">Repository</a>
+              <a href="https://github.com/dhruvkotian/esp32s3-inference/releases/tag/v1.2.0" target="_blank" rel="noopener">Release v1.2.0</a>
             </div>
           </div>
         </article>

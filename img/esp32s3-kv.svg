@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 475" width="760" height="475" role="img" aria-label="Schematic of the ESP32-S3 memory hierarchy: 512 KB SRAM holding int8 weights and a 16-position fp32 hot window, and 8 MB PSRAM holding the 245,760-byte int8 KV cache, scanned at 51.7 MB/s.">
+  <rect width="760" height="475" fill="#021019"/>
+  <g stroke="#0d3a4d" stroke-width="1" opacity=".55">
+    <path d="M0 19H760M0 38H760M0 57H760M0 76H760M0 95H760M0 114H760M0 133H760M0 152H760M0 171H760M0 190H760M0 209H760M0 228H760M0 247H760M0 266H760M0 285H760M0 304H760M0 323H760M0 342H760M0 361H760M0 380H760M0 399H760M0 418H760M0 437H760M0 456H760"/>
+    <path d="M19 0V475M38 0V475M57 0V475M76 0V475M95 0V475M114 0V475M133 0V475M152 0V475M171 0V475M190 0V475M209 0V475M228 0V475M247 0V475M266 0V475M285 0V475M304 0V475M323 0V475M342 0V475M361 0V475M380 0V475M399 0V475M418 0V475M437 0V475M456 0V475M475 0V475M494 0V475M513 0V475M532 0V475M551 0V475M570 0V475M589 0V475M608 0V475M627 0V475M646 0V475M665 0V475M684 0V475M703 0V475M722 0V475M741 0V475"/>
+  </g>
+
+  <text x="32" y="42" fill="#9ff5e4" font-family="monospace" font-size="14" letter-spacing="2">ON-DEVICE INT8 INFERENCE</text>
+  <text x="32" y="63" fill="#9dc2d2" font-family="monospace" font-size="11" letter-spacing="1">ESP32-S3 / 240 MHZ / 512-TOKEN CONTEXT</text>
+
+  <!-- SRAM -->
+  <rect x="32" y="92" width="300" height="256" fill="#061a28" stroke="#1b5d75" stroke-width="3"/>
+  <text x="48" y="118" fill="#ffd76a" font-family="monospace" font-size="13" letter-spacing="1">SRAM 512 KB</text>
+  <text x="48" y="136" fill="#9dc2d2" font-family="monospace" font-size="9">ACTIVE EXECUTION</text>
+  <g>
+    <rect x="48" y="150" width="24" height="24" fill="#7ef9ff" opacity=".85"/><rect x="76" y="150" width="24" height="24" fill="#7ef9ff" opacity=".85"/><rect x="104" y="150" width="24" height="24" fill="#7ef9ff" opacity=".85"/><rect x="132" y="150" width="24" height="24" fill="#7ef9ff" opacity=".85"/><rect x="160" y="150" width="24" height="24" fill="#7ef9ff" opacity=".85"/><rect x="188" y="150" width="24" height="24" fill="#7ef9ff" opacity=".85"/><rect x="216" y="150" width="24" height="24" fill="#7ef9ff" opacity=".85"/><rect x="244" y="150" width="24" height="24" fill="#7ef9ff" opacity=".85"/><rect x="272" y="150" width="24" height="24" fill="#7ef9ff" opacity=".85"/>
+    <rect x="48" y="178" width="24" height="24" fill="#7ef9ff" opacity=".72"/><rect x="76" y="178" width="24" height="24" fill="#7ef9ff" opacity=".72"/><rect x="104" y="178" width="24" height="24" fill="#7ef9ff" opacity=".72"/><rect x="132" y="178" width="24" height="24" fill="#7ef9ff" opacity=".72"/><rect x="160" y="178" width="24" height="24" fill="#7ef9ff" opacity=".72"/><rect x="188" y="178" width="24" height="24" fill="#7ef9ff" opacity=".72"/><rect x="216" y="178" width="24" height="24" fill="#7ef9ff" opacity=".72"/><rect x="244" y="178" width="24" height="24" fill="#7ef9ff" opacity=".72"/><rect x="272" y="178" width="24" height="24" fill="#7ef9ff" opacity=".72"/>
+    <rect x="48" y="206" width="24" height="24" fill="#7ef9ff" opacity=".58"/><rect x="76" y="206" width="24" height="24" fill="#7ef9ff" opacity=".58"/><rect x="104" y="206" width="24" height="24" fill="#7ef9ff" opacity=".58"/><rect x="132" y="206" width="24" height="24" fill="#7ef9ff" opacity=".58"/><rect x="160" y="206" width="24" height="24" fill="#7ef9ff" opacity=".58"/><rect x="188" y="206" width="24" height="24" fill="#7ef9ff" opacity=".58"/><rect x="216" y="206" width="24" height="24" fill="#7ef9ff" opacity=".58"/><rect x="244" y="206" width="24" height="24" fill="#7ef9ff" opacity=".58"/><rect x="272" y="206" width="24" height="24" fill="#7ef9ff" opacity=".58"/>
+  </g>
+  <text x="48" y="256" fill="#9dc2d2" font-family="monospace" font-size="9">INT8 WEIGHTS + WORKING BUFFERS</text>
+  <rect x="48" y="270" width="256" height="28" fill="#ffd76a" opacity=".92"/>
+  <text x="56" y="289" fill="#04222f" font-family="monospace" font-size="9" letter-spacing="1">16-POS FP32 HOT WINDOW · 20,480 B</text>
+  <text x="48" y="324" fill="#9ff5e4" font-family="monospace" font-size="9">13,231 B FREE AFTER PLACEMENT</text>
+
+  <!-- PSRAM -->
+  <rect x="428" y="92" width="300" height="256" fill="#061a28" stroke="#1b5d75" stroke-width="3"/>
+  <text x="444" y="118" fill="#ffd76a" font-family="monospace" font-size="13" letter-spacing="1">PSRAM 8 MB</text>
+  <text x="444" y="136" fill="#9dc2d2" font-family="monospace" font-size="9">INT8 KV CACHE</text>
+  <g>
+    <rect x="444" y="150" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="472" y="150" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="500" y="150" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="528" y="150" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="556" y="150" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="584" y="150" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="612" y="150" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="640" y="150" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="668" y="150" width="24" height="24" fill="#7ef9ff" opacity=".9"/>
+    <rect x="444" y="178" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="472" y="178" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="500" y="178" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="528" y="178" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="556" y="178" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="584" y="178" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="612" y="178" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="640" y="178" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="668" y="178" width="24" height="24" fill="#7ef9ff" opacity=".9"/>
+    <rect x="444" y="206" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="472" y="206" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="500" y="206" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="528" y="206" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="556" y="206" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="584" y="206" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="612" y="206" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="640" y="206" width="24" height="24" fill="#7ef9ff" opacity=".9"/><rect x="668" y="206" width="24" height="24" fill="#7ef9ff" opacity=".9"/>
+  </g>
+  <text x="444" y="256" fill="#9dc2d2" font-family="monospace" font-size="9">K + V INT8, ONE FP32 SCALE PER HEAD</text>
+  <text x="444" y="282" fill="#9ff5e4" font-family="monospace" font-size="12" letter-spacing="1">245,760 B PAYLOAD</text>
+  <text x="444" y="304" fill="#9dc2d2" font-family="monospace" font-size="9">5 LAYERS · 4 KV HEADS · 512 POSITIONS</text>
+
+  <!-- scan arrow -->
+  <g stroke="#ffd76a" stroke-width="2">
+    <path d="M342 220H414"/>
+    <path d="M406 214L416 220L406 226"/>
+  </g>
+  <text x="344" y="208" fill="#ffd76a" font-family="monospace" font-size="9" letter-spacing="1">SCAN</text>
+  <text x="336" y="244" fill="#9dc2d2" font-family="monospace" font-size="9">51.7 MB/S</text>
+
+  <!-- footer -->
+  <rect x="32" y="372" width="696" height="66" fill="#061a28" stroke="#1b5d75" stroke-width="3"/>
+  <text x="48" y="398" fill="#9ff5e4" font-family="monospace" font-size="11" letter-spacing="1">260K PARAMS · 5 LAYERS · 8 HEADS / 4 KV · 512 CTX</text>
+  <text x="48" y="422" fill="#ffd76a" font-family="monospace" font-size="12" letter-spacing="1">166.6 DECODE FORWARDS/S · 6.00 MS/FORWARD</text>
+</svg>

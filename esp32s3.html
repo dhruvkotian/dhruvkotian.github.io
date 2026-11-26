@@ -1,0 +1,2526 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="ocean">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ESP32-S3 INT8 Transformer | Dhruv Kotian</title>
+<meta name="description" content="INT8 KV caching and 128-bit PIE attention for a 260K-parameter transformer on the ESP32-S3: 166.6 decode forwards/s at 512 context, 2.898x the same-tree fp32 baseline, with raw logs and reproducible firmware." />
+<meta name="author" content="Dhruv Kotian" />
+<meta name="theme-color" content="#0b7494" />
+<script>
+  // Restore the saved theme before first paint so the page never flashes.
+  (function () {
+    try {
+      document.documentElement.classList.add('js');
+      var saved = window.localStorage.getItem('dk-theme');
+      var q = new URLSearchParams(window.location.search).get('theme');
+      if (q === 'ocean' || q === 'space' || q === 'gothic') {
+        document.documentElement.setAttribute('data-theme', q);
+      } else if (saved === 'space' || saved === 'gothic') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    } catch (e) {}
+  })();
+</script>
+<link rel="canonical" href="https://dhruvkotian.dev/esp32s3.html" />
+<meta property="og:title" content="Bytes, not FLOPs: INT8 transformer inference on the ESP32-S3" />
+<meta property="og:description" content="166.6 decode forwards/s at 512 context, 2.898x the fp32 baseline, 245,760 B int8 KV cache. Firmware, logs and negative results." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://dhruvkotian.dev/esp32s3.html" />
+<meta name="twitter:card" content="summary" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23064a66'/%3E%3Crect x='0' y='8' width='3' height='3' fill='%237ef9ff'/%3E%3Crect x='3' y='6' width='3' height='5' fill='%239ff5e4'/%3E%3Crect x='6' y='9' width='3' height='2' fill='%237ef9ff'/%3E%3Crect x='9' y='7' width='3' height='4' fill='%239ff5e4'/%3E%3Crect x='12' y='9' width='3' height='2' fill='%237ef9ff'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  "headline": "Bytes, Not FLOPs: INT8 KV Caching and 128-bit PIE Attention on ESP32-S3",
+  "author": {
+    "@type": "Person",
+    "name": "Dhruv Kotian",
+    "orcid": "https://orcid.org/0009-0000-5660-1911"
+  },
+  "datePublished": "2026",
+  "isPartOf": {
+    "@type": "Periodical",
+    "name": "ACM Transactions on Embedded Computing Systems"
+  },
+  "creativeWorkStatus": "Under review",
+  "about": ["Transformer inference", "INT8 quantisation", "ESP32-S3", "KV cache", "Edge AI"]
+}
+</script>
+<style>
+  /* ---------------------------------------------------------------
+     ESP32-S3 project page
+     Same pixel-ocean language as dhruvkotian.dev, one HTML file.
+     --------------------------------------------------------------- */
+  :root {
+    --sea-base: #01060c;
+    --panel: rgba(3, 18, 30, .74);
+    --panel-solid: #061a28;
+    --edge: #1b5d75;
+    --edge-soft: rgba(126, 249, 255, .18);
+    --ink: #e8f9ff;
+    --ink-dim: #9dc2d2;
+    --sun: #ffd76a;
+    --coral: #ff7a5c;
+    --foam: #9ff5e4;
+    --biolum: #7ef9ff;
+    --jelly: #d9a7ff;
+    --kelp: #79f7b0;
+    --shadow: rgba(0, 6, 12, .62);
+    --font-pixel: "Press Start 2P", ui-monospace, monospace;
+    --font-term: "VT323", ui-monospace, Menlo, monospace;
+    --max: 1120px;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 84px;
+    -webkit-text-size-adjust: 100%;
+    background: #01060c;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--ink);
+    font-family: var(--font-term);
+    font-size: 20px;
+    line-height: 1.5;
+    overflow-x: hidden;
+    overflow-x: clip;
+  }
+
+  a { color: inherit; }
+  ::selection { background: var(--biolum); color: #02121c; }
+
+  :focus-visible {
+    outline: 3px solid var(--sun);
+    outline-offset: 3px;
+  }
+
+  .skip {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+  }
+
+  .skip:focus {
+    left: 12px;
+    top: 12px;
+    padding: 12px 16px;
+    background: var(--sun);
+    color: #04222f;
+    font-family: var(--font-pixel);
+    font-size: .6rem;
+    text-decoration: none;
+  }
+
+  /* --- background ------------------------------------------------ */
+  .bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 90% 55% at 72% -10%, rgba(11, 116, 148, .42), transparent 64%),
+      radial-gradient(ellipse 52% 42% at 8% 34%, rgba(126, 249, 255, .06), transparent 70%),
+      linear-gradient(180deg, #021019 0%, #01060c 46%, #01060c 100%);
+  }
+
+  .bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: .5;
+    background-image:
+      linear-gradient(rgba(126, 249, 255, .055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(126, 249, 255, .055) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 88%);
+    mask-image: linear-gradient(180deg, #000 0%, transparent 88%);
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 2;
+    width: min(100% - 40px, var(--max));
+    margin-inline: auto;
+  }
+
+  /* --- nav -------------------------------------------------------- */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    transition: background .25s ease, border-color .25s ease;
+  }
+
+  .nav--deep {
+    background: rgba(2, 10, 18, .9);
+    border-bottom-color: rgba(126, 249, 255, .2);
+  }
+
+  .nav .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 66px;
+  }
+
+  .brand {
+    font-family: var(--font-pixel);
+    font-size: .68rem;
+    letter-spacing: .02em;
+    text-decoration: none;
+    color: var(--foam);
+    white-space: nowrap;
+  }
+
+  .brand span { color: var(--ink-dim); }
+  .brand .brand-mode { color: var(--sun); }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 1.05rem;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    white-space: nowrap;
+  }
+
+  .nav-links a:hover { color: var(--foam); }
+
+  .btn-mini {
+    font-family: var(--font-pixel);
+    font-size: .46rem;
+    line-height: 1.6;
+    padding: 7px 9px;
+    border: 2px solid var(--edge);
+    color: var(--sun) !important;
+  }
+
+  .btn-mini:hover {
+    background: var(--foam);
+    border-color: var(--foam);
+    color: #04222f !important;
+  }
+
+  .theme-switch {
+    display: flex;
+    gap: 3px;
+    padding: 3px;
+    border: 2px solid var(--edge);
+    background: rgba(2, 14, 22, .62);
+  }
+
+  .ts-opt {
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+  }
+
+  .ts-opt:hover { color: var(--foam); }
+  .ts-opt[aria-checked="true"] { background: var(--foam); color: #04222f; }
+
+  /* --- hero ------------------------------------------------------- */
+  .hero { padding: 60px 0 16px; }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.32fr) minmax(260px, .68fr);
+    gap: 42px;
+    align-items: start;
+  }
+
+  .eyebrow {
+    margin: 0 0 18px;
+    font-family: var(--font-pixel);
+    font-size: .5rem;
+    line-height: 1.8;
+    letter-spacing: .08em;
+    color: var(--sun);
+  }
+
+  h1 {
+    margin: 0 0 18px;
+    font-family: var(--font-pixel);
+    font-size: clamp(1.7rem, 4.4vw, 2.85rem);
+    line-height: 1.35;
+    letter-spacing: .01em;
+    text-shadow: 4px 4px 0 rgba(0, 8, 14, .6);
+  }
+
+  h1 .accent { color: var(--biolum); }
+
+  .tagline {
+    margin: 0 0 14px;
+    max-width: 58ch;
+    font-size: 1.42rem;
+    line-height: 1.35;
+    color: var(--ink);
+  }
+
+  .lede {
+    margin: 0;
+    max-width: 66ch;
+    font-size: 1.1rem;
+    color: var(--ink-dim);
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 11px 14px;
+    border: 2px solid var(--edge);
+    box-shadow: 4px 4px 0 var(--shadow);
+    font-family: var(--font-pixel);
+    font-size: .52rem;
+    line-height: 1.7;
+    text-decoration: none;
+    transition: transform .12s ease, background .12s ease, border-color .12s ease;
+  }
+
+  .btn:hover { transform: translate(-1px, -1px); }
+
+  .btn-primary {
+    background: var(--sun);
+    border-color: var(--sun);
+    color: #04222f;
+  }
+
+  .btn-primary:hover { background: #ffe69b; }
+
+  .btn-ghost {
+    background: rgba(3, 18, 30, .7);
+    color: var(--foam);
+  }
+
+  .btn-ghost:hover { border-color: var(--foam); }
+
+  .status-line {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 18px 0 0;
+    font-size: .98rem;
+    color: var(--ink-dim);
+  }
+
+  .status-line .dot {
+    width: 8px;
+    height: 8px;
+    background: var(--kelp);
+    box-shadow: 0 0 8px rgba(121, 247, 176, .65);
+    flex: 0 0 auto;
+  }
+
+  /* device card */
+  .device { padding: 18px 18px 16px; }
+
+  .device-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .device-top b {
+    font-family: var(--font-pixel);
+    font-size: .52rem;
+    color: var(--foam);
+  }
+
+  .device-top span {
+    font-family: var(--font-pixel);
+    font-size: .4rem;
+    color: var(--sun);
+    border: 2px solid var(--edge);
+    padding: 4px 6px;
+    white-space: nowrap;
+  }
+
+  .chip-art {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+
+  .chip-art i {
+    aspect-ratio: 1;
+    background: var(--edge);
+    opacity: .55;
+  }
+
+  .chip-art i.on { background: var(--biolum); opacity: .9; box-shadow: 0 0 8px rgba(126, 249, 255, .3); }
+  .chip-art i.hot { background: var(--sun); opacity: .9; }
+
+  .device dl { margin: 0; display: grid; gap: 8px; }
+
+  .device .row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--edge-soft);
+  }
+
+  .device .row:last-child { border-bottom: 0; padding-bottom: 0; }
+
+  .device dt {
+    font-family: var(--font-pixel);
+    font-size: .4rem;
+    line-height: 1.8;
+    letter-spacing: .05em;
+    color: var(--ink-dim);
+  }
+
+  .device dd {
+    margin: 0;
+    text-align: right;
+    font-size: .98rem;
+    color: var(--ink);
+  }
+
+  /* metric strip */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 34px;
+  }
+
+  .metric {
+    padding: 14px 14px 12px;
+    border: 2px solid var(--edge);
+    background: rgba(3, 18, 30, .62);
+    box-shadow: 4px 4px 0 var(--shadow);
+  }
+
+  .metric b {
+    display: block;
+    font-family: var(--font-pixel);
+    font-size: clamp(.72rem, 1.6vw, 1.02rem);
+    line-height: 1.5;
+    color: var(--foam);
+    font-weight: normal;
+  }
+
+  .metric span {
+    display: block;
+    margin-top: 6px;
+    font-size: .92rem;
+    line-height: 1.3;
+    color: var(--ink-dim);
+  }
+
+  .frozen-note {
+    margin: 16px 0 0;
+    padding-left: 11px;
+    border-left: 3px solid var(--sun);
+    font-size: .96rem;
+    color: var(--ink-dim);
+  }
+
+  /* --- sections --------------------------------------------------- */
+  .section { position: relative; padding: 82px 0 8px; }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 26px;
+    flex-wrap: wrap;
+  }
+
+  .section-num {
+    font-family: var(--font-pixel);
+    font-size: .58rem;
+    color: #04222f;
+    background: var(--sun);
+    padding: 7px 9px;
+    box-shadow: 4px 4px 0 var(--shadow);
+  }
+
+  h2 {
+    margin: 0;
+    font-family: var(--font-pixel);
+    font-size: clamp(.95rem, 2.4vw, 1.35rem);
+    line-height: 1.6;
+    letter-spacing: .01em;
+    text-shadow: 3px 3px 0 rgba(0, 8, 14, .55);
+  }
+
+  .section-label {
+    font-size: 1.04rem;
+    line-height: 1;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--foam);
+    opacity: .78;
+  }
+
+  .section-label::before {
+    content: "/";
+    margin-right: .5em;
+    color: var(--biolum);
+  }
+
+  .section-sub {
+    margin: 0 0 26px;
+    max-width: 72ch;
+    color: var(--ink-dim);
+    font-size: 1.12rem;
+  }
+
+  h3 {
+    margin: 0 0 10px;
+    font-family: var(--font-pixel);
+    font-size: .58rem;
+    line-height: 1.8;
+    letter-spacing: .04em;
+    color: var(--foam);
+  }
+
+  .panel {
+    padding: 20px 22px;
+    background: var(--panel);
+    border: 3px solid var(--edge);
+    box-shadow: 7px 7px 0 var(--shadow);
+  }
+
+  .panel-title {
+    margin: 0 0 12px;
+    font-family: var(--font-pixel);
+    font-size: .52rem;
+    line-height: 1.8;
+    letter-spacing: .06em;
+    color: var(--sun);
+  }
+
+  .cols-2 {
+    display: grid;
+    grid-template-columns: 1.25fr .75fr;
+    gap: 22px;
+    align-items: start;
+  }
+
+  .cols-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .prose p {
+    margin: 0 0 16px;
+    font-size: 1.1rem;
+  }
+
+  .prose p:last-child { margin-bottom: 0; }
+  .prose strong { color: var(--sun); font-weight: normal; }
+  .prose em { color: var(--foam); font-style: normal; }
+
+  .prose code,
+  td code,
+  .limit code,
+  .release code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .84em;
+    padding: 1px 5px;
+    color: var(--foam);
+    background: rgba(126, 249, 255, .07);
+    border: 1px solid var(--edge-soft);
+  }
+
+  .checklist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 10px;
+  }
+
+  .checklist li {
+    position: relative;
+    padding-left: 18px;
+    font-size: 1.02rem;
+  }
+
+  .checklist li::before {
+    content: "\25B8";
+    position: absolute;
+    left: 0;
+    color: var(--biolum);
+  }
+
+  .callout {
+    margin: 22px 0;
+    padding: 16px 18px;
+    border: 2px solid var(--edge);
+    border-left: 6px solid var(--sun);
+    background: rgba(255, 215, 106, .06);
+  }
+
+  .callout h3 {
+    margin: 0 0 6px;
+    font-size: .54rem;
+    color: var(--sun);
+  }
+
+  .callout p {
+    margin: 0;
+    font-size: 1.04rem;
+    color: var(--ink);
+  }
+
+  .callout p + p { margin-top: 10px; }
+
+  .callout.warn {
+    border-left-color: var(--coral);
+    background: rgba(255, 122, 92, .07);
+  }
+
+  .callout.warn h3 { color: var(--coral); }
+
+  .callout.note {
+    border-left-color: var(--biolum);
+    background: rgba(126, 249, 255, .05);
+  }
+
+  .callout.note h3 { color: var(--biolum); }
+
+  /* --- tables ----------------------------------------------------- */
+  .table-wrap {
+    margin: 16px 0 22px;
+    overflow-x: auto;
+    background: var(--panel);
+    border: 3px solid var(--edge);
+    box-shadow: 7px 7px 0 var(--shadow);
+  }
+
+  table {
+    width: 100%;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+  }
+
+  caption {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: .95rem;
+    color: var(--ink-dim);
+    border-bottom: 2px solid var(--edge);
+  }
+
+  th {
+    padding: 11px 14px;
+    text-align: left;
+    vertical-align: bottom;
+    font-family: var(--font-pixel);
+    font-size: .44rem;
+    line-height: 1.7;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--foam);
+    background: rgba(0, 0, 0, .22);
+    border-bottom: 2px solid var(--edge);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--edge-soft);
+    color: var(--ink);
+  }
+
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: rgba(126, 249, 255, .045); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.good { color: var(--kelp); }
+  td.dim { color: var(--ink-dim); }
+
+  /* --- memory stack ---------------------------------------------- */
+  .stack { display: grid; margin: 18px 0 24px; }
+
+  .stack-tier {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 18px;
+    align-items: center;
+    padding: 15px 18px;
+    background: var(--panel);
+    border: 3px solid var(--edge);
+  }
+
+  .tier-name {
+    font-family: var(--font-pixel);
+    font-size: .54rem;
+    line-height: 1.7;
+    color: var(--sun);
+  }
+
+  .tier-name span {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--font-term);
+    font-size: .94rem;
+    line-height: 1.2;
+    letter-spacing: 0;
+    color: var(--ink-dim);
+  }
+
+  .stack-tier p { margin: 0; font-size: 1.02rem; }
+  .stack-tier em { color: var(--ink-dim); font-style: normal; }
+
+  .stack-arrow {
+    padding: 5px 0;
+    text-align: center;
+    font-family: var(--font-pixel);
+    font-size: .4rem;
+    letter-spacing: .08em;
+    color: var(--biolum);
+  }
+
+  .kv-strip {
+    display: flex;
+    min-height: 46px;
+    margin: 14px 0 6px;
+    border: 3px solid var(--edge);
+  }
+
+  .kv-hot {
+    flex: 0 0 13%;
+    display: grid;
+    place-items: center;
+    padding: 6px;
+    text-align: center;
+    background: var(--sun);
+    color: #04222f;
+    font-family: var(--font-pixel);
+    font-size: .38rem;
+    line-height: 1.7;
+  }
+
+  .kv-cold {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: .94rem;
+    color: var(--ink);
+    background:
+      repeating-linear-gradient(90deg, rgba(126, 249, 255, .17) 0 6px, transparent 6px 9px),
+      var(--panel-solid);
+  }
+
+  .strip-note {
+    margin: 0 0 20px;
+    font-size: .9rem;
+    color: var(--ink-dim);
+  }
+
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin: 18px 0 10px;
+  }
+
+  .flow-step {
+    padding: 12px;
+    background: var(--panel);
+    border: 2px solid var(--edge);
+  }
+
+  .flow-step b {
+    display: block;
+    margin-bottom: 6px;
+    font-family: var(--font-pixel);
+    font-size: .4rem;
+    line-height: 1.8;
+    color: var(--sun);
+  }
+
+  .flow-step span {
+    display: block;
+    font-size: .92rem;
+    line-height: 1.35;
+    color: var(--ink-dim);
+  }
+
+  .steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+    display: grid;
+    gap: 9px;
+  }
+
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 12px 10px 44px;
+    background: var(--panel);
+    border: 2px solid var(--edge);
+    font-size: 1.02rem;
+  }
+
+  .steps li::before {
+    content: counter(step, decimal-leading-zero);
+    position: absolute;
+    left: 11px;
+    top: 10px;
+    font-family: var(--font-pixel);
+    font-size: .44rem;
+    color: var(--sun);
+  }
+
+  .steps b { color: var(--foam); font-weight: normal; }
+  .steps span { color: var(--ink-dim); }
+
+  /* --- results ---------------------------------------------------- */
+  .result-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 0 0 26px;
+  }
+
+  .result {
+    padding: 14px 15px;
+    background: rgba(3, 18, 30, .62);
+    border: 2px solid var(--edge);
+    box-shadow: 4px 4px 0 var(--shadow);
+  }
+
+  .result b {
+    display: block;
+    font-family: var(--font-pixel);
+    font-size: clamp(.72rem, 1.6vw, .95rem);
+    line-height: 1.5;
+    font-weight: normal;
+    color: var(--foam);
+  }
+
+  .result span {
+    display: block;
+    margin-top: 6px;
+    font-size: .92rem;
+    line-height: 1.3;
+    color: var(--ink-dim);
+  }
+
+  details.fold {
+    margin: 18px 0;
+    background: var(--panel);
+    border: 2px solid var(--edge);
+  }
+
+  details.fold summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--font-pixel);
+    font-size: .46rem;
+    line-height: 1.8;
+    color: var(--foam);
+  }
+
+  details.fold summary::-webkit-details-marker { display: none; }
+
+  details.fold summary::marker { content: ""; }
+
+  details.fold summary::before {
+    content: "+";
+    display: inline-block;
+    width: 1.6em;
+    color: var(--sun);
+  }
+
+  details.fold[open] summary::before { content: "\2212"; }
+  details.fold[open] summary { border-bottom: 2px solid var(--edge); }
+  details.fold .fold-body { padding: 16px; }
+  details.fold .table-wrap { margin-top: 0; }
+
+  /* --- limitations ------------------------------------------------ */
+  .limits {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .limit {
+    padding: 14px 16px;
+    background: var(--panel);
+    border: 2px solid var(--edge);
+    border-left: 5px solid var(--coral);
+  }
+
+  .limit h3 {
+    margin: 0 0 7px;
+    font-size: .46rem;
+    line-height: 1.8;
+    color: var(--coral);
+  }
+
+  .limit p {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--ink-dim);
+  }
+
+  .limit p strong { color: var(--ink); font-weight: normal; }
+
+  /* --- publication ------------------------------------------------ */
+  .paper { display: grid; gap: 10px; }
+
+  .paper .kicker {
+    font-family: var(--font-pixel);
+    font-size: .44rem;
+    line-height: 1.8;
+    letter-spacing: .06em;
+    color: var(--sun);
+  }
+
+  .paper h3 {
+    margin: 0;
+    font-family: var(--font-term);
+    font-size: 1.65rem;
+    line-height: 1.2;
+    color: var(--ink);
+    letter-spacing: 0;
+  }
+
+  .paper .meta { color: var(--ink-dim); font-size: 1.02rem; }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: max-content;
+    padding: 6px 8px;
+    border: 2px solid rgba(121, 247, 176, .4);
+    font-family: var(--font-pixel);
+    font-size: .4rem;
+    line-height: 1.8;
+    color: var(--kelp);
+  }
+
+  .status::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    background: var(--kelp);
+  }
+
+  /* --- releases --------------------------------------------------- */
+  .releases {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  .release { display: flex; flex-direction: column; gap: 10px; }
+
+  .release .tag {
+    font-family: var(--font-pixel);
+    font-size: .68rem;
+    color: var(--sun);
+  }
+
+  .release .role {
+    font-family: var(--font-pixel);
+    font-size: .4rem;
+    line-height: 1.8;
+    letter-spacing: .07em;
+    color: var(--biolum);
+  }
+
+  .release p { margin: 0; font-size: 1rem; color: var(--ink-dim); }
+
+  .release ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: .98rem;
+  }
+
+  .release .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 2px dashed var(--edge-soft);
+  }
+
+  .release .links a {
+    font-family: var(--font-pixel);
+    font-size: .42rem;
+    line-height: 1.8;
+    color: var(--sun);
+    text-decoration: none;
+  }
+
+  .release .links a:hover { color: var(--ink); }
+
+  /* --- code ------------------------------------------------------- */
+  .code { position: relative; margin: 14px 0 20px; }
+
+  pre {
+    margin: 0;
+    padding: 16px 18px;
+    overflow-x: auto;
+    background: #010b12;
+    border: 2px solid var(--edge);
+    color: #d7f7ff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .84rem;
+    line-height: 1.6;
+  }
+
+  pre code { font: inherit; }
+
+  .copy {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 5px 7px;
+    border: 2px solid var(--edge);
+    background: var(--panel-solid);
+    color: var(--foam);
+    font-family: var(--font-pixel);
+    font-size: .36rem;
+    line-height: 1.6;
+    cursor: pointer;
+  }
+
+  .copy:hover { border-color: var(--foam); }
+  .copy.done { color: var(--kelp); border-color: var(--kelp); }
+
+  /* --- footer ----------------------------------------------------- */
+  .footer {
+    margin-top: 78px;
+    padding: 46px 0 28px;
+    background: rgba(2, 10, 18, .74);
+    border-top: 3px solid var(--edge);
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 26px;
+  }
+
+  .footer h2 {
+    font-size: clamp(.85rem, 2vw, 1.1rem);
+  }
+
+  .footer p {
+    margin: 14px 0 0;
+    max-width: 48ch;
+    color: var(--ink-dim);
+  }
+
+  .footer-links { display: grid; gap: 10px; align-content: start; }
+
+  .footer-links a {
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--edge-soft);
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .footer-links a:hover { color: var(--foam); }
+
+  .colophon {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 30px;
+    padding-top: 16px;
+    border-top: 1px solid var(--edge-soft);
+    font-size: .94rem;
+    color: var(--ink-dim);
+  }
+
+  /* --- reveal ----------------------------------------------------- */
+  .js .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity .5s ease, transform .5s ease;
+    animation: reveal-fallback 0s linear 6s forwards;
+  }
+
+  .js .reveal.in { opacity: 1; transform: none; }
+
+  /* If the observer never runs, content still becomes visible. */
+  @keyframes reveal-fallback {
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .js .reveal { opacity: 1; transform: none; transition: none; animation: none; }
+    .btn { transition: none; }
+  }
+
+  /* --- themes ----------------------------------------------------- */
+  html[data-theme="space"] {
+    --sea-base: #07071c;
+    --panel: rgba(23, 23, 63, .78);
+    --panel-solid: #17173f;
+    --edge: #3b3578;
+    --edge-soft: rgba(185, 165, 255, .2);
+    --ink: #f3f0ff;
+    --ink-dim: #b1abd6;
+    --sun: #ffd24a;
+    --coral: #ff6ec7;
+    --foam: #b9a5ff;
+    --biolum: #6dd8ff;
+    --jelly: #ff9ad8;
+    --kelp: #79f7b0;
+    --shadow: rgba(2, 2, 14, .72);
+    background: #07071c;
+  }
+
+  html[data-theme="space"] .bg {
+    background:
+      radial-gradient(ellipse 120% 85% at 72% -12%, #1b1949 0%, #0b0b28 44%, #06061a 100%);
+  }
+
+  html[data-theme="space"] .bg::after {
+    background-image:
+      radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, .7) 50%, transparent 51%),
+      radial-gradient(1px 1px at 140px 90px, rgba(185, 165, 255, .6) 50%, transparent 51%),
+      radial-gradient(1px 1px at 260px 50px, rgba(109, 216, 255, .55) 50%, transparent 51%);
+    background-size: 300px 300px;
+    -webkit-mask-image: none;
+    mask-image: none;
+    opacity: .55;
+  }
+
+  html[data-theme="space"] .nav--deep {
+    background: rgba(9, 9, 34, .9);
+    border-bottom-color: rgba(185, 165, 255, .22);
+  }
+
+  html[data-theme="gothic"] {
+    --sea-base: #050103;
+    --panel: rgba(20, 4, 8, .8);
+    --panel-solid: #140408;
+    --edge: #5a1019;
+    --edge-soft: rgba(255, 60, 70, .2);
+    --ink: #f4e9dc;
+    --ink-dim: #b9a298;
+    --sun: #d91f36;
+    --coral: #ff5a45;
+    --foam: #eadbc6;
+    --biolum: #ff5a5a;
+    --jelly: #8c1c2b;
+    --kelp: #d8c4b0;
+    --shadow: rgba(0, 0, 0, .82);
+    background: #050103;
+  }
+
+  html[data-theme="gothic"] .bg {
+    background:
+      radial-gradient(ellipse 82% 58% at 78% 4%, rgba(126, 8, 20, .42), transparent 62%),
+      radial-gradient(ellipse 62% 46% at 12% 70%, rgba(80, 4, 12, .3), transparent 68%),
+      linear-gradient(180deg, #0a0205 0%, #030103 54%, #0b0204 100%);
+  }
+
+  html[data-theme="gothic"] .bg::after {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 70, 70, .055) 0 1px,
+      transparent 1px 4px
+    );
+    opacity: .7;
+  }
+
+  html[data-theme="gothic"] .nav--deep {
+    background: rgba(7, 1, 3, .92);
+    border-bottom-color: rgba(200, 30, 45, .3);
+  }
+
+  html[data-theme="gothic"] .btn-primary { color: #f4e9dc; }
+  html[data-theme="gothic"] .ts-opt[aria-checked="true"] { color: #140408; }
+
+  /* --- responsive ------------------------------------------------- */
+  @media (max-width: 1040px) {
+    .nav-links { gap: 13px; font-size: 1rem; }
+  }
+
+  @media (max-width: 980px) {
+    .hero-grid, .cols-2, .releases { grid-template-columns: 1fr; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .result-grid, .cols-3 { grid-template-columns: repeat(2, 1fr); }
+    .flow { grid-template-columns: repeat(2, 1fr); }
+    .limits { grid-template-columns: 1fr; }
+    .footer-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 900px) {
+    .nav-links a:not(.btn-mini) { display: none; }
+  }
+
+  @media (max-width: 640px) {
+    .metrics, .result-grid, .cols-3, .flow { grid-template-columns: 1fr; }
+    .stack-tier { grid-template-columns: 1fr; gap: 8px; }
+    .section { padding-top: 62px; }
+    .hero { padding-top: 38px; }
+    .device dd { text-align: left; }
+    .device .row { flex-direction: column; gap: 2px; }
+    .kv-hot { flex-basis: 18%; }
+    .footer { margin-top: 56px; }
+
+    /* stacked tables: labels from the header row, no sideways scrolling */
+    table.responsive { min-width: 0; font-size: 1rem; }
+    table.responsive thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    table.responsive tbody tr {
+      display: block;
+      padding: 7px 0;
+      border-bottom: 2px solid var(--edge);
+    }
+    table.responsive tbody tr:last-child { border-bottom: 0; }
+    table.responsive td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 5px 12px;
+      border: 0;
+      text-align: right;
+      white-space: normal;
+    }
+    table.responsive td::before {
+      content: attr(data-label);
+      flex: 0 0 auto;
+      max-width: 55%;
+      text-align: left;
+      font-family: var(--font-pixel);
+      font-size: .38rem;
+      line-height: 1.7;
+      color: var(--ink-dim);
+    }
+    table.responsive td:first-child {
+      display: block;
+      padding: 2px 12px 7px;
+      text-align: left;
+      font-size: 1.02rem;
+      color: var(--foam);
+    }
+    table.responsive td:first-child::before { display: none; }
+    table.responsive td.num { white-space: nowrap; }
+    table.responsive td:last-child:nth-child(2) { justify-content: flex-end; }
+    table.responsive td:last-child:nth-child(2)::before { display: none; }
+    table.responsive caption { padding-bottom: 6px; border-bottom: 0; }
+  }
+
+  @media (max-width: 430px) {
+    .nav-links .btn-mini { display: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="bg" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="brand" href="index.html">DK<span>://</span><span class="brand-mode">RESEARCH</span></a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="#overview">Overview</a>
+      <a href="#results">Results</a>
+      <a href="#software">Software</a>
+      <div class="theme-switch" id="themeSwitch" role="radiogroup" aria-label="Colour theme">
+        <button class="ts-opt" type="button" role="radio" aria-checked="true" tabindex="0" data-theme-set="ocean" aria-label="Ocean theme" title="Ocean theme">
+          <svg width="16" height="11" viewBox="0 0 18 12" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="0" y="6" width="3" height="2"/><rect x="3" y="3" width="3" height="2"/><rect x="6" y="6" width="3" height="2"/><rect x="9" y="3" width="3" height="2"/><rect x="12" y="6" width="3" height="2"/><rect x="15" y="9" width="3" height="2"/></g></svg>
+        </button>
+        <button class="ts-opt" type="button" role="radio" aria-checked="false" tabindex="-1" data-theme-set="space" aria-label="Space theme" title="Space theme">
+          <svg width="13" height="13" viewBox="0 0 14 14" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="6" y="0" width="2" height="4"/><rect x="6" y="10" width="2" height="4"/><rect x="0" y="6" width="4" height="2"/><rect x="10" y="6" width="4" height="2"/><rect x="4" y="4" width="2" height="2"/><rect x="8" y="4" width="2" height="2"/><rect x="4" y="8" width="2" height="2"/><rect x="8" y="8" width="2" height="2"/></g></svg>
+        </button>
+        <button class="ts-opt" type="button" role="radio" aria-checked="false" tabindex="-1" data-theme-set="gothic" aria-label="Gothic theme" title="Gothic theme">
+          <svg width="13" height="13" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="4" y="1" width="8" height="2"/><rect x="3" y="3" width="10" height="6"/><rect x="4" y="9" width="8" height="3"/><rect x="5" y="12" width="6" height="2"/></g><g fill="#140408"><rect x="5" y="5" width="2" height="2"/><rect x="9" y="5" width="2" height="2"/><rect x="7" y="8" width="2" height="2"/></g></svg>
+        </button>
+      </div>
+      <a class="btn-mini" href="https://github.com/dhruvkotian/esp32s3-inference" target="_blank" rel="noopener">GitHub &#8599;</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">ACM TECS &middot; MANUSCRIPT UNDER REVIEW</p>
+          <h1>Bytes, not <span class="accent">FLOPs</span>.</h1>
+          <p class="tagline">
+            An int8 KV cache and 128-bit PIE attention let a 260K-parameter
+            transformer hold a 512-token context entirely on an ESP32-S3.
+          </p>
+          <p class="lede">
+            At batch size one, decoding a transformer is a memory problem. This
+            project asks what happens when the KV cache moves to PSRAM as int8,
+            the attention scan is mapped onto the Xtensa integer SIMD unit, and
+            every claim is measured on one board with the raw UART captures
+            published alongside the code.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#results">Read the results</a>
+            <a class="btn btn-ghost" href="#software">Software &amp; releases</a>
+            <a class="btn btn-ghost" href="https://github.com/dhruvkotian/esp32s3-inference" target="_blank" rel="noopener">Repository &#8599;</a>
+          </div>
+          <p class="status-line"><span class="dot" aria-hidden="true"></span> Submitted to ACM TECS &middot; under review</p>
+        </div>
+
+        <aside class="panel device" aria-label="Platform summary">
+          <div class="device-top">
+            <b>ESP32-S3-CAM</b>
+            <span>BATCH 1</span>
+          </div>
+          <div class="chip-art" aria-hidden="true">
+            <i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i>
+            <i></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i>
+            <i class="on"></i><i></i><i class="on"></i><i></i><i class="hot"></i><i class="hot"></i><i></i><i class="on"></i><i></i><i></i>
+            <i></i><i class="on"></i><i></i><i></i><i class="hot"></i><i class="hot"></i><i></i><i></i><i class="on"></i><i></i>
+          </div>
+          <dl>
+            <div class="row"><dt>MCU</dt><dd>ESP32-S3 &middot; 240 MHz</dd></div>
+            <div class="row"><dt>CORES</dt><dd>2 &times; Xtensa LX7</dd></div>
+            <div class="row"><dt>SRAM</dt><dd>512 KB</dd></div>
+            <div class="row"><dt>PSRAM</dt><dd>8 MB octal &middot; 80 MHz</dd></div>
+            <div class="row"><dt>FLASH</dt><dd>16 MB</dd></div>
+            <div class="row"><dt>MODEL</dt><dd>260K params &middot; 512 ctx</dd></div>
+            <div class="row"><dt>TOOLCHAIN</dt><dd>ESP-IDF v5.4.4</dd></div>
+          </dl>
+        </aside>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <b>166.6</b>
+          <span>decode forwards/s at 512-token context</span>
+        </div>
+        <div class="metric">
+          <b>2.898&times;</b>
+          <span>the same-tree fp32 single-core baseline</span>
+        </div>
+        <div class="metric">
+          <b>245,760 B</b>
+          <span>int8 KV payload and scales in PSRAM</span>
+        </div>
+        <div class="metric">
+          <b>6.00 ms</b>
+          <span>per decode forward, measured on the board</span>
+        </div>
+      </div>
+
+      <p class="frozen-note">
+        Results frozen at <strong>v1.2.0</strong> (22 November 2026). The later
+        <strong>v1.3.0</strong> runtime is described under Subsequent Development
+        and was <em>not</em> evaluated in the submitted manuscript.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= 01 OVERVIEW ================= -->
+  <section class="section" id="overview">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">01</span>
+        <h2>Project overview</h2>
+        <span class="section-label">Problem &amp; objective</span>
+      </div>
+
+      <div class="cols-2">
+        <div class="prose reveal">
+          <p>
+            <strong>Decoding at batch size one is a memory problem.</strong> Every
+            generated token reads the entire key/value cache. At 512 context the
+            fp32 cache is 655,360 B, larger than the ESP32-S3's 512 KB of internal
+            SRAM. It has to live in PSRAM, and the attention scan becomes a
+            bandwidth loop over an external memory port.
+          </p>
+          <p>
+            The obvious move is to store K and V as int8. The obvious move is also
+            a trap: the first int8 build in this project was <em>19.9% slower</em>
+            than fp32, because dequantising every K value back to fp32 cost more
+            scalar work than the bytes saved. Compression only pays when the scan
+            itself stops dequantising.
+          </p>
+          <p>
+            This project maps the attention scan onto the 128-bit PIE integer SIMD
+            unit, keeps a 16-position fp32 hot window in SRAM, and measures the
+            result end to end. The cache falls to 245,760 B of payload and scales,
+            the final build reaches 166.6 decode forwards/s, and the raw captures,
+            negative results and analysis scripts are part of the release.
+          </p>
+        </div>
+
+        <aside class="panel reveal" aria-label="Project objective">
+          <h3 class="panel-title">OBJECTIVE</h3>
+          <ul class="checklist">
+            <li>Run a complete 260K-parameter decoder on one ESP32-S3.</li>
+            <li>Hold a 512-token context without a host or a network.</li>
+            <li>Make int8 compression a speedup, not just a footprint win.</li>
+            <li>Measure throughput, accuracy and memory on the board.</li>
+            <li>Publish the logs, the rejected ideas and the build config.</li>
+          </ul>
+        </aside>
+      </div>
+
+      <div class="callout warn reveal">
+        <h3>WHAT THIS IS NOT</h3>
+        <p>
+          It is not an assistant and not a general-purpose LLM runtime. The
+          checkpoint is Karpathy's 260K TinyStories model: it writes simple
+          children's-story English and is best understood as a reflex-tier
+          runtime. No energy-per-token measurement was made, so no energy claim
+          is made. The MoE work in v1.3.0 is a synthetic prototype with no
+          training and no quality claim.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 02 ARCHITECTURE ================= -->
+  <section class="section" id="architecture">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">02</span>
+        <h2>Research architecture</h2>
+        <span class="section-label">SRAM, PSRAM, KV cache, attention</span>
+      </div>
+
+      <p class="section-sub reveal">
+        Three memory tiers, one execution tier. The model weights and the hot part
+        of the cache stay in internal SRAM; the cold part of the cache lives in
+        PSRAM; flash and SD are only touched on the cold path.
+      </p>
+
+      <div class="stack reveal">
+        <div class="stack-tier">
+          <div class="tier-name">SRAM<span>512 KB</span></div>
+          <p>
+            int8 weights <em>250,368 B</em> &middot; per-row scales <em>14,048 B</em>
+            &middot; fp32 K/V hot window <em>20,480 B</em> &middot; working buffers.
+            <em>13,231 B free</em> after placement, largest free block 7,680 B.
+          </p>
+        </div>
+        <div class="stack-arrow">&#9650; ACTIVE EXECUTION</div>
+        <div class="stack-tier">
+          <div class="tier-name">PSRAM<span>8 MB octal</span></div>
+          <p>
+            int8 K and V payload <em>163,840 B</em> &middot; K and V scales
+            <em>81,920 B</em> &middot; <em>245,760 B</em> total. Scanned at
+            <em>51.7 MB/s</em>, about 85% of the measured sequential read rate.
+          </p>
+        </div>
+        <div class="stack-arrow">&#9650; STAGING / COLD PATH</div>
+        <div class="stack-tier">
+          <div class="tier-name">FLASH + SD<span>16 MB / card</span></div>
+          <p>
+            Model and tokenizer, plus the <code>.m8</code> model library in
+            v1.3.0. Read once on selection, not during a forward pass.
+          </p>
+        </div>
+      </div>
+
+      <div class="table-wrap reveal">
+        <table>
+          <caption>Final memory budget, v1.2.0 64 KB D-cache build</caption>
+          <thead>
+            <tr><th scope="col">Region</th><th scope="col" class="num">Bytes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>int8 weight matrices, internal SRAM</td><td class="num">250,368</td></tr>
+            <tr><td>int8 weight matrices, PSRAM</td><td class="num">10,240</td></tr>
+            <tr><td>Per-row weight scales</td><td class="num">14,048</td></tr>
+            <tr><td>int8 K payload</td><td class="num">81,920</td></tr>
+            <tr><td>int8 V payload</td><td class="num">81,920</td></tr>
+            <tr><td>K scales</td><td class="num">40,960</td></tr>
+            <tr><td>V scales</td><td class="num">40,960</td></tr>
+            <tr><td>fp32 hot window, K and V (16 positions)</td><td class="num">20,480</td></tr>
+            <tr><td>Free internal SRAM after placement</td><td class="num">13,231</td></tr>
+            <tr><td>Largest free internal block</td><td class="num">7,680</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="prose reveal">
+        <p>
+          The cache is <strong>5 layers &times; 4 KV heads &times; 512 positions
+          &times; 8 dimensions</strong>. K and V each take 81,920 B as int8, and
+          one fp32 scale per head per position adds 40,960 B each. That is
+          245,760 B, <strong>2.67&times; smaller</strong> than the 655,360 B fp32
+          cache. Adding the 20,480 B fp32 hot window brings the complete hybrid
+          cache to <strong>266,240 B</strong>.
+        </p>
+      </div>
+
+      <div class="kv-strip reveal" role="img" aria-label="Schematic of the KV cache: a small fp32 hot window followed by the int8 positions in PSRAM.">
+        <span class="kv-hot">16 POS<br />FP32</span>
+        <span class="kv-cold">496 positions &middot; int8 K/V + fp32 scales &middot; 238,080 B scanned per token</span>
+      </div>
+      <p class="strip-note reveal">Schematic, not to scale. Positions 0&ndash;15 stay in SRAM; the scan covers 16&ndash;511.</p>
+
+      <h3 class="reveal">The attention scan</h3>
+      <div class="flow reveal">
+        <div class="flow-step">
+          <b>01 / QUANTISE Q</b>
+          <span>Each query head becomes a 16-byte int8 vector with one zero half.</span>
+        </div>
+        <div class="flow-step">
+          <b>02 / K DOT</b>
+          <span>One 16-lane <code>EE.VMULAS.S8.ACCX</code> per head per position; four positions per call.</span>
+        </div>
+        <div class="flow-step">
+          <b>03 / SOFTMAX</b>
+          <span>Table-interpolated exp, normalise and fold the V scale into one pass.</span>
+        </div>
+        <div class="flow-step">
+          <b>04 / QUANTISE V</b>
+          <span>Folded weights become int8 per head, removing a separate scale pass.</span>
+        </div>
+        <div class="flow-step">
+          <b>05 / V DOT</b>
+          <span>One SIMD dot over positions per output element; upper four heads run on core 1.</span>
+        </div>
+      </div>
+
+      <div class="callout note reveal">
+        <h3>THE CENTRAL RESULT</h3>
+        <p>
+          The naive int8 cache was a regression: 46.52 tok/s against 58.06 tok/s
+          for fp32, a 19.9% loss. The byte saving only becomes a speedup after
+          the K dot, V transpose and folded scale move the scan into the PIE
+          unit. Representation and mapping had to change together.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 03 BASELINE ================= -->
+  <section class="section" id="baseline">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">03</span>
+        <h2>v1.2.0 &mdash; research baseline</h2>
+        <span class="section-label">The evaluated implementation</span>
+      </div>
+
+      <p class="section-sub reveal">
+        This is the exact code, configuration and capture set behind the TECS
+        experimental claims. The tag is frozen; later work does not alter these
+        kernels or these numbers.
+      </p>
+
+      <div class="prose reveal">
+        <p>
+          The comparison is a same-tree 2&times;2 matrix. Every cell uses the same
+          allocator, the same hot window, the same prompt and the same harness.
+          The fp32 cells were re-measured in this tree rather than copied from an
+          older release, because the earlier numbers predate the hot window.
+        </p>
+      </div>
+
+      <div class="table-wrap reveal">
+        <table>
+          <caption>Same-tree baseline matrix, 512 context, sustained sampled tokens/s</caption>
+          <thead>
+            <tr>
+              <th scope="col">D-cache</th>
+              <th scope="col">Cores</th>
+              <th scope="col" class="num">Sustained tok/s</th>
+              <th scope="col" class="num">Attention &micro;s/token</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>32 KB</td><td>1</td><td class="num">48.85</td><td class="num">19,360.4</td></tr>
+            <tr><td>32 KB</td><td>2</td><td class="num">62.58</td><td class="num">14,867.9</td></tr>
+            <tr><td>64 KB</td><td>1</td><td class="num">58.06</td><td class="num">16,115.8</td></tr>
+            <tr><td>64 KB</td><td>2</td><td class="num">79.77</td><td class="num">11,287.7</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="prose reveal">
+        Dual core is worth 1.281&times; at 32 KB and 1.374&times; at 64 KB. Doubling
+        the cache is worth 1.188&times; on one core and 1.275&times; on two. The
+        final int8 build reaches <strong>166.73 tok/s</strong> against 58.06 for
+        fp32 single core, a <strong>2.872&times;</strong> step at the sampled
+        rate; the headline 2.898&times; compares the best final capture, 168.25
+        sampled tok/s, against the same 58.06 baseline.
+      </p>
+
+      <h3 class="reveal">Seven changes that turned the cache around</h3>
+      <ol class="steps reveal">
+        <li><b>Integer K dot.</b> <span>Quantise the query per head and score a position with one 16-lane int8 MAC.</span></li>
+        <li><b>V transpose and folded scale.</b> <span>Store V as <code>[layer][kv_head][dim][pos]</code> and fold the V scale into the softmax weight.</span></li>
+        <li><b>Dual core.</b> <span>Run the upper four heads on a worker task pinned to core 1, with one notification pair per layer.</span></li>
+        <li><b>Scale transpose.</b> <span>Move scales to <code>[layer][head][pos]</code> so a head walks contiguous floats.</span></li>
+        <li><b><code>softmax_fold</code>.</b> <span>Normalisation, V-scale fold and the folded-weight max in one pass over the scores.</span></li>
+        <li><b>Batched K dot &times;4.</b> <span>Load the query once and compute four positions per call.</span></li>
+        <li><b>Inline rounding.</b> <span>Replace <code>lrintf</code> in the quantise loops with an inline integer round.</span></li>
+      </ol>
+
+      <details class="fold reveal">
+        <summary>Full optimisation waterfall, one build per change</summary>
+        <div class="fold-body">
+          <div class="table-wrap">
+            <table>
+              <caption>64 KB cache. Each row is one build with exactly one change.</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Build</th>
+                  <th scope="col">Cores</th>
+                  <th scope="col" class="num">Tok/s</th>
+                  <th scope="col" class="num">Step</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>fp32 KV</td><td>1</td><td class="num">58.06</td><td class="num dim">&mdash;</td></tr>
+                <tr><td>int8 KV, dequantise on read</td><td>1</td><td class="num">46.52</td><td class="num" style="color:var(--coral)">&minus;19.9%</td></tr>
+                <tr><td>+ integer K dot</td><td>1</td><td class="num">69.35</td><td class="num good">+49.1%</td></tr>
+                <tr><td>+ V transpose, folded scale</td><td>1</td><td class="num">89.82</td><td class="num good">+29.5%</td></tr>
+                <tr><td>+ dual core</td><td>2</td><td class="num">121.28</td><td class="num good">+35.0%</td></tr>
+                <tr><td>+ <code>att2</code> allocation fix</td><td>2</td><td class="num">123.22</td><td class="num good">+1.6%</td></tr>
+                <tr><td>+ scale transpose</td><td>2</td><td class="num">130.86</td><td class="num good">+6.2%</td></tr>
+                <tr><td>+ <code>softmax_fold</code></td><td>2</td><td class="num">134.01</td><td class="num good">+2.4%</td></tr>
+                <tr><td>+ batched K dot &times;4</td><td>2</td><td class="num">148.01</td><td class="num good">+10.4%</td></tr>
+                <tr><td>+ inline rounding</td><td>2</td><td class="num">166.73</td><td class="num good">+12.6%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <div class="callout reveal">
+        <h3>NEGATIVE RESULTS ARE PART OF THE RELEASE</h3>
+        <p>
+          DMA prefetch, a three-pass <code>softmax_quant</code> fusion, tracking
+          the score maximum inside the K loop and software-pipelining the four K
+          loads were all measured and rejected. They are recorded in
+          <code>logs/INT8KV-RESULT.md</code> with the rest of the waterfall.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 04 METHOD ================= -->
+  <section class="section" id="method">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">04</span>
+        <h2>Experimental methodology</h2>
+        <span class="section-label">Hardware, configurations, protocol</span>
+      </div>
+
+      <div class="cols-2">
+        <div class="table-wrap reveal">
+          <table>
+            <caption>Hardware under test</caption>
+            <thead>
+              <tr><th scope="col">Item</th><th scope="col">Value</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Board</td><td>ESP32-S3-CAM generic carrier</td></tr>
+              <tr><td>MCU</td><td>ESP32-S3, dual-core Xtensa LX7, 240 MHz</td></tr>
+              <tr><td>Silicon</td><td>revision v0.2, efuse block revision 1.3</td></tr>
+              <tr><td>Internal SRAM</td><td>512 KB</td></tr>
+              <tr><td>PSRAM</td><td>8 MB octal, 80 MHz, AP Memory, 32 B burst</td></tr>
+              <tr><td>Flash</td><td>16 MB, Boya, DIO mode, 80 MHz</td></tr>
+              <tr><td>Host link</td><td>CH343 USB-UART, <code>/dev/ttyACM0</code>, 115200 baud</td></tr>
+              <tr><td>Storage</td><td>microSD, FAT, 1-bit SDMMC at 40 MHz</td></tr>
+              <tr><td>Toolchain</td><td>ESP-IDF v5.4.4</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap reveal">
+          <table>
+            <caption>Build configurations &mdash; both variants are 8-way</caption>
+            <thead>
+              <tr><th scope="col">Variant</th><th scope="col">Cache</th><th scope="col">Line</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Final (research)</td><td>64 KB</td><td>32 B</td></tr>
+              <tr><td>Sensitivity</td><td>32 KB</td><td>32 B</td></tr>
+            </tbody>
+          </table>
+          <p class="strip-note" style="padding:0 14px 12px; margin:0;">
+            The ESP32-S3 programs its data cache at startup, so cache size is a
+            build-time choice and every variant is an app-only reflash.
+            <code>config/sdkconfig.64kb</code> and <code>config/sdkconfig.32kb</code>
+            are the full snapshots.
+          </p>
+        </div>
+      </div>
+
+      <div class="prose reveal">
+        <h3>Throughput protocol</h3>
+        <ol class="steps" style="margin-bottom:18px;">
+          <li><b>Fixed workload.</b> <span>512-token prompt, 512-token context, batch size one, greedy sampling, same harness in every cell.</span></li>
+          <li><b>Two rates, one run.</b> <span>The 512-sample harness performs 507 decode forwards. Sampled tok/s is 512 divided by elapsed time; decode forwards/s is 507 divided by elapsed time.</span></li>
+          <li><b>Eighteen runs.</b> <span>Six captures of the v1.2.0 firmware, three 512-token runs per capture, with baseline and candidate alternated in one session.</span></li>
+          <li><b>Reflash between sessions.</b> <span>The spread covers flash, boot and allocator placement, not only run-to-run noise.</span></li>
+          <li><b>Two clocks.</b> <span>Wall time from <code>esp_timer_get_time()</code>; core time from cycle counters summed across both cores. They are reported separately because two cores run at once.</span></li>
+          <li><b>Microbenchmarks.</b> <span>Five timings per case, median reported; the empty-call overhead is 5.00 cycles. Each build prints 22 <code>CHECK</code> assertions.</span></li>
+        </ol>
+
+        <h3>Accuracy protocol</h3>
+        <p>
+          A separate 124-token paragraph is repeated to fill all 512 positions.
+          Logits are dumped at nine depths: 15, 16, 17 (the hot-window boundary),
+          32 and 64 (the first int8 positions), then 128, 256, 384 and 511. Three
+          paths are compared at the same depths on the same token sequence:
+          fp32 weights with fp32 KV, int8 weights with fp32 KV, and the combined
+          int8 weights with int8 KV.
+        </p>
+        <p>
+          Top-1 agreement, relative logit RMSE and cosine similarity are reported.
+          Position 15 is a built-in control: it sits inside the fp32 hot window,
+          so the KV-only error there must be exactly zero.
+        </p>
+      </div>
+
+      <div class="callout note reveal">
+        <h3>WHAT WAS HELD CONSTANT</h3>
+        <p>
+          Board, clock, prompt, harness, allocator, hot-window size, core
+          assignment and ESP-IDF version. Cache size is part of the experiment,
+          not an implementation detail; comparisons across cache sizes say so
+          explicitly. No number in the release is a single best run.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 05 RESULTS ================= -->
+  <section class="section" id="results">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">05</span>
+        <h2>Results</h2>
+        <span class="section-label">Throughput, accuracy, memory, ESP-DSP</span>
+      </div>
+
+      <div class="result-grid reveal">
+        <div class="result"><b>166.6 fwd/s</b><span>decode rate at 512 context</span></div>
+        <div class="result"><b>168.25 tok/s</b><span>sampled rate, same harness</span></div>
+        <div class="result"><b>2.898&times;</b><span>vs fp32 single core</span></div>
+        <div class="result"><b>2.109&times;</b><span>vs fp32 dual core</span></div>
+        <div class="result"><b>51.7 MB/s</b><span>KV scan, 85% of the port</span></div>
+        <div class="result"><b>0.9995+</b><span>minimum cosine similarity</span></div>
+      </div>
+
+      <div class="table-wrap reveal">
+        <table>
+          <caption>Headline throughput and footprint, v1.2.0</caption>
+          <thead>
+            <tr><th scope="col">Metric</th><th scope="col" class="num">Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Decode forwards/s, 512 context</td><td class="num">166.6</td></tr>
+            <tr><td>Sampled tokens/s, same harness</td><td class="num">168.25</td></tr>
+            <tr><td>Time per decode forward</td><td class="num">6.00 ms</td></tr>
+            <tr><td>Speed-up vs fp32 single core, sampled</td><td class="num">2.898&times;</td></tr>
+            <tr><td>Speed-up vs fp32 dual core, sampled</td><td class="num">2.109&times;</td></tr>
+            <tr><td>int8 KV payload and scales</td><td class="num">245,760 B</td></tr>
+            <tr><td>Complete hybrid cache including hot window</td><td class="num">266,240 B</td></tr>
+            <tr><td>PSRAM scan traffic</td><td class="num">238,080 B/token</td></tr>
+            <tr><td>Scan bandwidth</td><td class="num">51.7 MB/s</td></tr>
+            <tr><td>Attention share of a token</td><td class="num">76.7%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="reveal">Where the time goes</h3>
+      <div class="table-wrap reveal">
+        <table>
+          <caption>Attention sub-profile, final build, core time summed over both cores</caption>
+          <thead>
+            <tr><th scope="col">Phase</th><th scope="col" class="num">&micro;s/token</th><th scope="col" class="num">Share</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>K dot, integer SIMD</td><td class="num">3,314.8</td><td class="num">37.1%</td></tr>
+            <tr><td>softmax + fold</td><td class="num">3,305.3</td><td class="num">37.0%</td></tr>
+            <tr><td>V dot, integer SIMD</td><td class="num">1,448.0</td><td class="num">16.2%</td></tr>
+            <tr><td>V weight quantise</td><td class="num">874.5</td><td class="num">9.8%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="prose reveal">
+        The four phases sum to 8,942.6 &micro;s of core time, 1.94&times; the
+        4.608 ms of attention wall time. The 2.97% gap between two wall-time
+        cores and that sum is the per-layer notification and join cost. The scan
+        moves 238,080 B per token and runs at 51.7 MB/s, about 85% of the
+        60.6 MB/s sequential PSRAM read rate measured under the same
+        configuration. The remaining headroom is a byte problem, not a prefetch
+        problem; the DMA experiment lost.
+      </p>
+
+      <h3 class="reveal">Accuracy against the fp32 reference</h3>
+      <div class="table-wrap reveal">
+        <table>
+          <caption>Nine depths, 512 positions, relative logit RMSE and cosine similarity</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="num">Position</th>
+              <th scope="col" class="num">Weight-only</th>
+              <th scope="col" class="num">KV-only</th>
+              <th scope="col" class="num">Combined</th>
+              <th scope="col" class="num">Combined cosine</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="num">15</td><td class="num">2.128%</td><td class="num">0.000%</td><td class="num">2.128%</td><td class="num">0.9998874</td></tr>
+            <tr><td class="num">16</td><td class="num">1.125%</td><td class="num">1.601%</td><td class="num">2.089%</td><td class="num">0.9998994</td></tr>
+            <tr><td class="num">17</td><td class="num">2.086%</td><td class="num">2.870%</td><td class="num">1.960%</td><td class="num">0.9998322</td></tr>
+            <tr><td class="num">32</td><td class="num">1.794%</td><td class="num">3.092%</td><td class="num">2.905%</td><td class="num">0.9995908</td></tr>
+            <tr><td class="num">64</td><td class="num">1.426%</td><td class="num">5.622%</td><td class="num">4.564%</td><td class="num">0.9996197</td></tr>
+            <tr><td class="num">128</td><td class="num">1.165%</td><td class="num">1.827%</td><td class="num">1.543%</td><td class="num">0.9999312</td></tr>
+            <tr><td class="num">256</td><td class="num">1.724%</td><td class="num">3.453%</td><td class="num">3.235%</td><td class="num">0.9995052</td></tr>
+            <tr><td class="num">384</td><td class="num">0.881%</td><td class="num">2.657%</td><td class="num">2.712%</td><td class="num">0.9998220</td></tr>
+            <tr><td class="num">511</td><td class="num">0.789%</td><td class="num">1.362%</td><td class="num">1.077%</td><td class="num">0.9999461</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="prose reveal">
+        Top-1 agrees at all nine depths on all three paths. Combined relative
+        logit RMSE is <strong>1.077% to 4.564%</strong> and cosine similarity is
+        at least <strong>0.9995052</strong>. The errors do not add linearly
+        because the weight and KV error vectors can partially cancel in the top
+        logits; what matters is that there is no systematic drift out to position
+        511, where 496 of the 512 attended positions are int8.
+      </p>
+
+      <h3 class="reveal">Kernel comparison against ESP-DSP</h3>
+      <div class="table-wrap reveal">
+        <table>
+          <caption>Microbenchmark, internal SRAM, ESP-DSP v1.8.2, 240 MHz</caption>
+          <thead>
+            <tr>
+              <th scope="col">Kernel</th>
+              <th scope="col">Case</th>
+              <th scope="col" class="num">Cycles/call</th>
+              <th scope="col" class="num">Cycles/block</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>two-load (v1.1.0)</td><td>len 496</td><td class="num">276.17</td><td class="num">8.91</td></tr>
+            <tr><td>fused (v1.2.0)</td><td>len 496</td><td class="num">127.08</td><td class="num">4.10</td></tr>
+            <tr><td>ESP-DSP</td><td>len 496</td><td class="num">128.08</td><td class="num">4.13</td></tr>
+            <tr><td>fused, four positions</td><td>one call</td><td class="num">64.04</td><td class="num">16.01</td></tr>
+            <tr><td>ESP-DSP, four positions</td><td>four calls</td><td class="num">132.09</td><td class="num">33.02</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="prose reveal">
+        The fused long dot matches the vendor loop at 4.10 against 4.13 cycles
+        per block, without the vendor prologue, so it also wins at short lengths.
+        The four-position batch is <strong>2.063&times;</strong> faster than four
+        ESP-DSP calls. End to end the fused load is worth <strong>+0.91%</strong>
+        (168.25 against 166.74 tok/s) and moves the V phase from 1,448.4 to
+        1,355.7 &micro;s; all 42 logit blocks are byte-identical, so the change is
+        bit-exact. The rest of the scan did not move, which is what the bandwidth
+        analysis predicts.
+      </p>
+
+      <details class="fold reveal">
+        <summary>Cache sensitivity of the final kernel</summary>
+        <div class="fold-body">
+          <div class="table-wrap">
+            <table>
+              <caption>Everything held constant except the D-cache size</caption>
+              <thead>
+                <tr><th scope="col">Cache</th><th scope="col" class="num">Tok/s</th><th scope="col" class="num">Attention &micro;s</th><th scope="col" class="num">K dot &micro;s</th><th scope="col" class="num">V dot &micro;s</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>32 KB</td><td class="num">156.31</td><td class="num">5,117.9</td><td class="num">3,989.2</td><td class="num">1,656.0</td></tr>
+                <tr><td>64 KB</td><td class="num">166.73</td><td class="num">4,608.1</td><td class="num">3,314.8</td><td class="num">1,448.0</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="strip-note" style="padding:12px 14px 0; margin:0;">
+            The 64 KB cache is 6.7% faster. Logits are bit-identical at both
+            sizes, so the difference is purely a memory effect. The larger cache
+            was worth 14.5% before the kernel work; the scale transpose and the
+            batched K dot left less line reuse for the cache to capture.
+          </p>
+        </div>
+      </details>
+
+      <div class="callout reveal">
+        <h3>READING THE NUMBERS HONESTLY</h3>
+        <p>
+          Attention is still 76.7% of the token and the scan is at 85% of the
+          measured port. If attention were free the token would fall to 1.40 ms,
+          but that is not a plan; the remaining levers are fewer bytes per
+          position and a cheaper score path, plus the 23.3% of serial matmul,
+          RoPE and MLP work. The reproducible spread over 18 runs is 0.023%,
+          so the measurement is stable even though the headroom is bounded.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 06 REPRODUCIBILITY ================= -->
+  <section class="section" id="reproduce">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">06</span>
+        <h2>Reproducibility</h2>
+        <span class="section-label">Build, datasets, verification</span>
+      </div>
+
+      <p class="section-sub reveal">
+        The release is built to be re-run, not just read. The firmware, the
+        sdkconfig snapshots, the model hashes and the raw UART captures are all
+        in the repository; the analysis scripts recompute the tables from those
+        logs and fail rather than substitute a default.
+      </p>
+
+      <div class="cols-2">
+        <div class="reveal">
+          <h3>Build the research configuration</h3>
+          <div class="code">
+            <button class="copy" type="button" data-copy>COPY</button>
+            <pre><code>. $IDF_PATH/export.sh
+cd firmware
+idf.py set-target esp32s3
+cp ../config/sdkconfig.64kb sdkconfig
+idf.py fullclean
+idf.py build
+idf.py -p /dev/ttyACM0 flash monitor</code></pre>
+          </div>
+          <p class="strip-note">
+            The 32 KB build is the sensitivity baseline, not the headline
+            configuration. The cache size and line size are part of the
+            experiment.
+          </p>
+        </div>
+
+        <div class="reveal">
+          <h3>Recompute the results</h3>
+          <div class="code">
+            <button class="copy" type="button" data-copy>COPY</button>
+            <pre><code>python3 tools/analyze_bench.py
+python3 tools/make_figures.py
+python3 tools/micro_report.py
+
+# verify every tracked file
+sha256sum -c MANIFEST.sha256</code></pre>
+          </div>
+          <p class="strip-note">
+            The v1.2.0 manifest covers 127 files; v1.3.0 covers 166. Both pass
+            from a fresh clone of the tagged tree.
+          </p>
+        </div>
+      </div>
+
+      <div class="table-wrap reveal">
+        <table>
+          <caption>Pinned inputs and where to find them</caption>
+          <thead>
+            <tr><th scope="col">Item</th><th scope="col">Pin</th><th scope="col">Location</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Toolchain</td><td>ESP-IDF v5.4.4</td><td><code>docs/HARDWARE.md</code></td></tr>
+            <tr><td>Research config</td><td>64 KB D-cache, 32 B line, 8-way</td><td><code>config/sdkconfig.64kb</code></td></tr>
+            <tr><td>Model</td><td><code>stories260K.bin</code>, 1,056,540 B</td><td><code>model/</code></td></tr>
+            <tr><td>Tokenizer</td><td><code>tok512.bin</code>, 6,227 B</td><td><code>model/</code></td></tr>
+            <tr><td>Reference logits</td><td><code>expected.json</code></td><td><code>data/</code></td></tr>
+            <tr><td>Raw captures</td><td>UART logs and summaries</td><td><code>logs/</code></td></tr>
+            <tr><td>Procedure</td><td>Full build and capture steps</td><td><code>docs/REPRODUCE.md</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout note reveal">
+        <h3>MODEL PROVENANCE</h3>
+        <p>
+          The model and tokenizer are unmodified copies of Andrej Karpathy's
+          tinyllamas 260K release for <code>llama2.c</code>, MIT licensed. Their
+          SHA-256 hashes are recorded in <code>model/PROVENANCE.md</code> and
+          checked against the upstream files. The training data (TinyStories) is
+          not redistributed.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 07 LIMITATIONS ================= -->
+  <section class="section" id="limits">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">07</span>
+        <h2>Limitations</h2>
+        <span class="section-label">Scope of the claims</span>
+      </div>
+
+      <p class="section-sub reveal">
+        These are constraints on what the numbers mean, not footnotes to hide.
+        The release is deliberately narrow so that every claim is checkable.
+      </p>
+
+      <div class="limits">
+        <div class="limit reveal">
+          <h3>ONE BOARD, ONE SILICON REVISION</h3>
+          <p>All measurements come from a single ESP32-S3-CAM, silicon v0.2, 8 MB octal PSRAM. The board vendor and revision were not marked and were not recorded, so they are not claimed. Results may differ on other PSRAM parts or cache configurations.</p>
+        </div>
+        <div class="limit reveal">
+          <h3>260K MODEL, 512-TOKEN CONTEXT</h3>
+          <p>The checkpoint writes simple children's-story English. This is a reflex-tier runtime, not an assistant. Nothing here demonstrates quality on reasoning, code, dialogue or long-form tasks.</p>
+        </div>
+        <div class="limit reveal">
+          <h3>NO ENERGY MEASUREMENT</h3>
+          <p>Energy per token was not measured. No energy, battery-life or thermal claim is made. Throughput and memory are the only measured axes.</p>
+        </div>
+        <div class="limit reveal">
+          <h3>LOGIT ACCURACY, NOT TASK ACCURACY</h3>
+          <p>Top-1 matches the fp32 reference at nine depths, but combined relative logit RMSE reaches 4.564% at position 64. This is a numerical equivalence check, not a downstream benchmark.</p>
+        </div>
+        <div class="limit reveal">
+          <h3>THE SCAN IS PORT-LIMITED</h3>
+          <p>51.7 MB/s is about 85% of the measured 60.6 MB/s sequential PSRAM read rate. DMA prefetch and software pipelining were tried and rejected; further gains need fewer bytes per position or a cheaper score path.</p>
+        </div>
+        <div class="limit reveal">
+          <h3>v1.3.0 MoE IS SYNTHETIC</h3>
+          <p>The expert sidecar has two synthetic experts, no training and no router learning. The measured costs are real; no quality, routing or load-balancing claim is made. Per-token expert paging from SD is not viable at the measured card rate.</p>
+        </div>
+        <div class="limit reveal">
+          <h3>SWITCHING REQUIRES IDENTICAL SHAPES</h3>
+          <p>Runtime model switching in v1.3.0 rejects shape or tokenizer changes. Models with different tensor shapes still require a reboot; the library is a same-shape model selector, not a general runtime.</p>
+        </div>
+        <div class="limit reveal">
+          <h3>NO SECURE BOOT OR SIGNED MODELS</h3>
+          <p>The <code>.m8</code> SHA-256 is an integrity check, not authentication. There is no secure boot, flash encryption or model signing. Do not load blobs from untrusted sources.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 08 PUBLICATION ================= -->
+  <section class="section" id="publication">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">08</span>
+        <h2>Publication</h2>
+        <span class="section-label">Manuscript status</span>
+      </div>
+
+      <div class="panel paper reveal">
+        <span class="kicker">MANUSCRIPT</span>
+        <h3>Bytes, Not FLOPs: INT8 KV Caching and 128-bit PIE Attention on ESP32-S3</h3>
+        <p class="meta">Dhruv Kotian &middot; Department of Mechatronics Engineering, RTMSSU, Kharghar, India</p>
+        <p class="meta">Submitted to <em>ACM Transactions on Embedded Computing Systems</em> (TECS), 2026. Manuscript ID TECS-2026-0369.</p>
+        <span class="status">UNDER REVIEW</span>
+        <p class="meta">
+          No acceptance, publication date or DOI is claimed. When the paper is
+          published, the DOI will be added here and to the repository citation.
+          The manuscript and its production files are maintained privately and
+          are not hosted on this site or in the software repository.
+        </p>
+      </div>
+
+      <div class="callout note reveal" style="margin-top:22px;">
+        <h3>WHY THE MANUSCRIPT IS SEPARATE</h3>
+        <p>
+          The public repository is the software artifact. Its history was
+          filtered before publication, so no manuscript PDF, LaTeX source,
+          submission record or anonymous review copy exists in any commit. That
+          keeps the artifact citable and the submission record private.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 09 SOFTWARE ================= -->
+  <section class="section" id="software">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">09</span>
+        <h2>Software</h2>
+        <span class="section-label">Repository, releases, licence</span>
+      </div>
+
+      <p class="section-sub reveal">
+        One public repository, two tagged releases. <code>v1.2.0</code> is the
+        research baseline; <code>v1.3.0</code> is the runtime evolution and was
+        not evaluated in the submitted manuscript.
+      </p>
+
+      <div class="releases">
+        <article class="panel release reveal">
+          <span class="tag">v1.2.0</span>
+          <span class="role">RESEARCH BASELINE</span>
+          <p>
+            The exact firmware, configuration and benchmark captures behind the
+            TECS experimental claims. Frozen; later work does not change these
+            kernels or these numbers.
+          </p>
+          <ul>
+            <li>Int8 KV cache and 128-bit PIE attention</li>
+            <li>Batched K dot, folded V scale, dual-core head split</li>
+            <li>Standalone ESP-DSP microbenchmark</li>
+            <li>127-file manifest, 18-run reproducibility check</li>
+          </ul>
+          <div class="links">
+            <a href="https://github.com/dhruvkotian/esp32s3-inference/tree/v1.2.0" target="_blank" rel="noopener">Tree</a>
+            <a href="https://github.com/dhruvkotian/esp32s3-inference/releases/tag/v1.2.0" target="_blank" rel="noopener">Release</a>
+            <a href="https://github.com/dhruvkotian/esp32s3-inference/tree/v1.2.0/logs" target="_blank" rel="noopener">Raw logs</a>
+            <a href="https://github.com/dhruvkotian/esp32s3-inference/blob/v1.2.0/docs/REPRODUCE.md" target="_blank" rel="noopener">Reproduce</a>
+          </div>
+        </article>
+
+        <article class="panel release reveal">
+          <span class="tag">v1.3.0</span>
+          <span class="role">RUNTIME EVOLUTION &middot; NOT IN THE MANUSCRIPT</span>
+          <p>
+            A model library and runtime layer built on the frozen baseline:
+            prequantized <code>.m8</code> blobs, a PSRAM cache, NVS boot
+            selection and a synthetic MoE prototype.
+          </p>
+          <ul>
+            <li>Header-only probe and directory scan</li>
+            <li>Three-slot inactive model cache with LRU eviction</li>
+            <li>NVS last-selected model and runtime switching</li>
+            <li>166-file manifest, runtime and MoE logs</li>
+          </ul>
+          <div class="links">
+            <a href="https://github.com/dhruvkotian/esp32s3-inference/tree/v1.3.0" target="_blank" rel="noopener">Tree</a>
+            <a href="https://github.com/dhruvkotian/esp32s3-inference/releases/tag/v1.3.0" target="_blank" rel="noopener">Release</a>
+            <a href="https://github.com/dhruvkotian/esp32s3-inference/blob/v1.3.0/docs/MODEL-LIBRARY-DESIGN.md" target="_blank" rel="noopener">Design</a>
+            <a href="https://github.com/dhruvkotian/esp32s3-inference/blob/v1.3.0/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+          </div>
+        </article>
+      </div>
+
+      <div class="table-wrap reveal">
+        <table>
+          <caption>Licensing</caption>
+          <thead>
+            <tr><th scope="col">Component</th><th scope="col">Licence</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Firmware, tools and build configuration</td><td>GPL-3.0-only</td></tr>
+            <tr><td>Bundled 260K model and tokenizer</td><td>MIT (Karpathy tinyllamas / <code>llama2.c</code>)</td></tr>
+            <tr><td>Documentation and figures</td><td>CC BY 4.0</td></tr>
+            <tr><td>Manuscript and production files</td><td>Not part of the repository</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="prose reveal">
+        <p>
+          A Zenodo DOI has not been minted yet; the GitHub tags are the current
+          citation targets. When a DOI exists it will be added to
+          <code>CITATION.cff</code>, the release notes and this page.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 10 SUBSEQUENT ================= -->
+  <section class="section" id="subsequent">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">10</span>
+        <h2>Subsequent development &mdash; v1.3.0</h2>
+        <span class="section-label">After the submitted manuscript</span>
+      </div>
+
+      <div class="callout warn reveal">
+        <h3>NOT EVALUATED IN THE SUBMITTED MANUSCRIPT</h3>
+        <p>
+          Everything in this section is later work. It does not change the
+          evaluated kernels, the measured claims or the accuracy results of
+          v1.2.0. It is included for completeness, not as evidence for the paper.
+        </p>
+      </div>
+
+      <div class="cols-3">
+        <div class="panel reveal">
+          <h3 class="panel-title">.M8 MODEL LIBRARY</h3>
+          <p>
+            Prequantized, self-describing blobs with a 4 KiB header, magic
+            <code>M8B1</code>, embedded tokenizer, header CRC32, payload SHA-256
+            and an on-device sanity fingerprint. The loader probes the header
+            before it stages a byte.
+          </p>
+        </div>
+        <div class="panel reveal">
+          <h3 class="panel-title">PSRAM CACHE + NVS</h3>
+          <p>
+            Three inactive slots plus the active model, LRU eviction, and
+            <code>model_apply_cached()</code> to swap the active stage without
+            copying the blob again. The last selection is stored in NVS by
+            basename, with a flash-partition fallback.
+          </p>
+        </div>
+        <div class="panel reveal">
+          <h3 class="panel-title">SYNTHETIC MoE</h3>
+          <p>
+            A <code>MOE1</code> sidecar stages FFN-only experts in PSRAM and
+            refills a per-layer row range into the existing internal-SRAM arena.
+            Two experts, no training, no router learning, no quality claim.
+          </p>
+        </div>
+      </div>
+
+      <div class="table-wrap reveal">
+        <table>
+          <caption>Measured on the same board, 2026-11-25</caption>
+          <thead>
+            <tr><th scope="col">Test</th><th scope="col" class="num">Result</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Cold model select (SD &rarr; PSRAM &rarr; SRAM)</td><td class="num">377.6 ms</td></tr>
+            <tr><td>Cached select</td><td class="num">29.4 / 30.0 ms</td></tr>
+            <tr><td>LRU cache, eight selects</td><td class="num">8/8 correct, 3 slots</td></tr>
+            <tr><td>MoE, pinned expert</td><td class="num">1.00&times; a plain forward</td></tr>
+            <tr><td>MoE, natural synthetic router</td><td class="num">~1.9&times;</td></tr>
+            <tr><td>MoE, round-robin worst case</td><td class="num">3.33&times; (4,222 vs 1,266 &micro;s)</td></tr>
+            <tr><td>Expert refill from PSRAM</td><td class="num">58&ndash;60 MB/s (~588 &micro;s/layer)</td></tr>
+            <tr><td><code>.m8</code> blob</td><td class="num">290,816 B</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="prose reveal">
+        <p>
+          Forcing the booted model's own FFN reproduces the baseline logits bit
+          for bit (<code>crc 0x4a4a3c07</code>), which validates the sidecar
+          offsets and copy ranges. PSRAM returns to its pre-stage value after the
+          sidecar is unbound.
+        </p>
+        <p>
+          The card is the reason per-token expert paging was ruled out. On the
+          1-bit SDMMC bus at 40 MHz, raw sequential reads reach
+          <strong>4.865 MB/s</strong> in 64 KiB chunks; FATFS with a 64 KiB
+          buffer reaches 4.31 MB/s on a 1 MiB file, and a mount costs about
+          82&ndash;88 ms. Moving a 34,912 B expert layer per token from SD would
+          cost roughly 7 ms per layer, tens of milliseconds per token before any
+          compute. Staging experts in PSRAM and refilling SRAM at 58&ndash;60 MB/s
+          is the viable path.
+        </p>
+        <p>
+          What did <em>not</em> change: the v1.2.0 kernels, the int8 KV layout,
+          the accuracy results and the TECS claims. v1.3.0 adds a runtime around
+          the frozen core.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 11 CITATION ================= -->
+  <section class="section" id="citation">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="section-num">11</span>
+        <h2>Citation</h2>
+        <span class="section-label">Software and manuscript</span>
+      </div>
+
+      <div class="cols-2">
+        <div class="reveal">
+          <h3>Software &mdash; v1.2.0</h3>
+          <div class="code">
+            <button class="copy" type="button" data-copy>COPY</button>
+            <pre><code>@software{kotian2026esp32s3,
+  author  = {Kotian, Dhruv},
+  title   = {{esp32s3-inference}: INT8 KV-cache and
+             attention kernels for the ESP32-S3},
+  year    = {2026},
+  version = {1.2.0},
+  license = {GPL-3.0-only},
+  url     = {https://github.com/dhruvkotian/esp32s3-inference},
+  note    = {Research baseline; software artifact for the
+             ACM TECS manuscript}
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="reveal">
+          <h3>Manuscript &mdash; under review</h3>
+          <div class="code">
+            <button class="copy" type="button" data-copy>COPY</button>
+            <pre><code>@article{kotian2026bytes,
+  author  = {Kotian, Dhruv},
+  title   = {Bytes, Not {FLOPs}: {INT8} {KV} Caching and
+             128-bit {PIE} Attention on {ESP32-S3}},
+  journal = {ACM Transactions on Embedded Computing Systems},
+  year    = {2026},
+  note    = {Manuscript under review}
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <p class="strip-note reveal">
+        Machine-readable metadata is in <code>CITATION.cff</code> at the
+        repository root. The manuscript DOI will be added when it exists.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer" id="contact">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <h2>Small models, real hardware, measured claims.</h2>
+          <p>
+            Open to collaborations on embedded systems, edge AI and anything
+            that needs a transformer to run inside a device rather than behind
+            an API.
+          </p>
+        </div>
+        <div class="footer-links">
+          <a href="index.html">&larr; dhruvkotian.dev</a>
+          <a href="https://github.com/dhruvkotian/esp32s3-inference" target="_blank" rel="noopener">Repository &#8599;</a>
+          <a href="https://github.com/dhruvkotian" target="_blank" rel="noopener">GitHub &#8599;</a>
+          <a href="https://orcid.org/0009-0000-5660-1911" target="_blank" rel="noopener">ORCID &#8599;</a>
+          <a href="mailto:dhruvjkotian@gmail.com">Email &#8599;</a>
+        </div>
+      </div>
+      <div class="colophon">
+        <span>&copy; <span id="year">2026</span> Dhruv Kotian &middot; dhruvkotian.dev</span>
+        <span>Last updated 26 November 2026 &middot; hand-written HTML/CSS &middot; no trackers</span>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script>
+  // ---------------------------------------------------------------
+  // Theme switch: ocean, space or gothic, shared with the home page
+  // ---------------------------------------------------------------
+  (function () {
+    var root = document.documentElement;
+    var group = document.getElementById('themeSwitch');
+    var opts = group ? Array.prototype.slice.call(group.querySelectorAll('[data-theme-set]')) : [];
+    var meta = document.querySelector('meta[name="theme-color"]');
+    var KEY = 'dk-theme';
+    var THEMES = ['ocean', 'space', 'gothic'];
+    var META = { ocean: '#0b7494', space: '#0a0a23', gothic: '#120207' };
+
+    function current() {
+      var saved = root.getAttribute('data-theme');
+      return THEMES.indexOf(saved) === -1 ? 'ocean' : saved;
+    }
+
+    function apply(theme, persist) {
+      if (THEMES.indexOf(theme) === -1) theme = 'ocean';
+      root.setAttribute('data-theme', theme);
+
+      opts.forEach(function (opt) {
+        var on = opt.getAttribute('data-theme-set') === theme;
+        opt.setAttribute('aria-checked', on ? 'true' : 'false');
+        opt.tabIndex = on ? 0 : -1;
+      });
+
+      if (meta) meta.setAttribute('content', META[theme]);
+
+      if (persist) {
+        try { window.localStorage.setItem(KEY, theme); } catch (e) {}
+      }
+    }
+
+    function choose(theme, focus) {
+      apply(theme, true);
+      if (focus) {
+        var next = document.querySelector('[data-theme-set="' + theme + '"]');
+        if (next) next.focus();
+      }
+    }
+
+    opts.forEach(function (opt) {
+      opt.addEventListener('click', function () {
+        choose(opt.getAttribute('data-theme-set'), false);
+      });
+      opt.addEventListener('keydown', function (event) {
+        var i = THEMES.indexOf(current());
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+          event.preventDefault();
+          choose(THEMES[(i + 1) % THEMES.length], true);
+        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          choose(THEMES[(i + THEMES.length - 1) % THEMES.length], true);
+        } else if (event.key === ' ' || event.key === 'Enter') {
+          event.preventDefault();
+          choose(opt.getAttribute('data-theme-set'), true);
+        }
+      });
+    });
+
+    apply(current(), false);
+  })();
+
+  // ---------------------------------------------------------------
+  // Sticky nav background after the hero starts to scroll away
+  // ---------------------------------------------------------------
+  (function () {
+    var nav = document.getElementById('nav');
+    if (!nav) return;
+    function onScroll() {
+      if (window.scrollY > 28) nav.classList.add('nav--deep');
+      else nav.classList.remove('nav--deep');
+    }
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  })();
+
+  // ---------------------------------------------------------------
+  // Reveal on scroll; content stays visible without JavaScript
+  // ---------------------------------------------------------------
+  (function () {
+    var items = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+    if (!items.length) return;
+
+    if (!('IntersectionObserver' in window)) {
+      items.forEach(function (el) { el.classList.add('in'); });
+      return;
+    }
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+
+    items.forEach(function (el) { io.observe(el); });
+  })();
+
+  // ---------------------------------------------------------------
+  // Label table cells so the stacked mobile layout stays readable
+  // ---------------------------------------------------------------
+  (function () {
+    var tables = Array.prototype.slice.call(document.querySelectorAll('table'));
+
+    tables.forEach(function (table) {
+      var head = table.querySelector('thead');
+      if (!head) return;
+
+      var labels = Array.prototype.map.call(head.querySelectorAll('th'), function (th) {
+        return th.textContent.replace(/\s+/g, ' ').trim();
+      });
+      if (!labels.length) return;
+
+      table.classList.add('responsive');
+
+      Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function (row) {
+        Array.prototype.forEach.call(row.children, function (cell, index) {
+          if (labels[index]) cell.setAttribute('data-label', labels[index]);
+        });
+      });
+    });
+  })();
+
+  // ---------------------------------------------------------------
+  // Copy buttons for the code blocks
+  // ---------------------------------------------------------------
+  (function () {
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-copy]'));
+
+    function fallback(text) {
+      var area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(area);
+    }
+
+    buttons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        var block = button.parentNode.querySelector('pre');
+        if (!block) return;
+        var text = block.innerText;
+        var done = function () {
+          button.textContent = 'COPIED';
+          button.classList.add('done');
+          window.setTimeout(function () {
+            button.textContent = 'COPY';
+            button.classList.remove('done');
+          }, 1600);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, function () {
+            fallback(text);
+            done();
+          });
+        } else {
+          fallback(text);
+          done();
+        }
+      });
+    });
+  })();
+
+  // Year
+  (function () {
+    var year = document.getElementById('year');
+    if (year) year.textContent = String(new Date().getFullYear());
+  })();
+</script>
+</body>
+</html>
