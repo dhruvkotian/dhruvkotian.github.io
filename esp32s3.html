@@ -414,11 +414,20 @@
   }
 
   /* metric strip */
+  .metrics-label {
+    margin: 34px 0 0;
+    font-family: var(--mono);
+    font-size: .78rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--sun);
+  }
+
   .metrics {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
-    margin-top: 34px;
+    margin-top: 10px;
   }
 
   .metric {
@@ -1344,6 +1353,7 @@
         </aside>
       </div>
 
+      <p class="metrics-label">v1.2.0 research results</p>
       <div class="metrics">
         <div class="metric">
           <b>166.6</b>
@@ -1355,7 +1365,7 @@
         </div>
         <div class="metric">
           <b>2.898&times;</b>
-          <span>sampled-rate comparison with the 58.06 tok/s fp32 single core</span>
+          <span>sampled-rate improvement vs the same-tree FP32 single-core baseline of 58.06 sampled tokens/s</span>
         </div>
         <div class="metric">
           <b>245,760 B</b>
@@ -1444,7 +1454,7 @@
         Three memory tiers, one execution tier. Most model weights and the hot
         fp32 KV-cache window reside in internal SRAM. A small portion of the
         weight matrices and the cold int8 KV cache reside in external PSRAM.
-        Flash and SD are reserved for model storage and cold-path loading.
+        Flash and SD are used for model storage and cold-path loading.
       </p>
 
       <div class="stack reveal">
