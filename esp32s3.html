@@ -2071,8 +2071,9 @@ sha256sum -c MANIFEST.sha256</code></pre>
         <p class="meta">Submitted to <em>ACM Transactions on Embedded Computing Systems</em> (TECS), 2026. Manuscript ID TECS-2026-0369.</p>
         <span class="status">UNDER REVIEW</span>
         <p class="meta">
-          No acceptance, publication date or DOI is claimed. When the paper is
-          published, the DOI will be added here and to the repository citation.
+          No acceptance, publication date or article DOI is claimed. If the
+          paper is published, its DOI will be added here and to the repository
+          citation.
           The manuscript and its production files are maintained privately and
           are not hosted on this site or in the software repository.
         </p>
@@ -2100,9 +2101,10 @@ sha256sum -c MANIFEST.sha256</code></pre>
       </div>
 
       <p class="section-sub reveal">
-        One public repository, two tagged releases. <code>v1.2.0</code> is the
+        One public repository, three tagged releases. <code>v1.2.0</code> is the
         research baseline; <code>v1.3.0</code> is the runtime evolution and was
-        not evaluated in the submitted manuscript.
+        not evaluated in the submitted manuscript; <code>v1.3.1</code> is the
+        metadata patch archived by Zenodo.
       </p>
 
       <div class="releases">
@@ -2151,6 +2153,11 @@ sha256sum -c MANIFEST.sha256</code></pre>
         </article>
       </div>
 
+      <p class="strip-note reveal">
+        <code>v1.3.1</code> is a documentation and metadata patch on
+        <code>v1.3.0</code>; its firmware is byte-identical.
+      </p>
+
       <div class="table-wrap reveal">
         <table>
           <caption>Licensing</caption>
@@ -2168,9 +2175,19 @@ sha256sum -c MANIFEST.sha256</code></pre>
 
       <div class="prose reveal">
         <p>
-          A Zenodo DOI has not been minted yet; the GitHub tags are the current
-          citation targets. When a DOI exists it will be added to
-          <code>CITATION.cff</code>, the release notes and this page.
+          The software release is archived by Zenodo:
+          <a href="https://doi.org/10.5281/zenodo.24555021">10.5281/zenodo.24555021</a>
+          (version <code>v1.3.1</code>) &middot;
+          <a href="https://doi.org/10.5281/zenodo.24555020">10.5281/zenodo.24555020</a>
+          (concept DOI, all versions). The same DOI is recorded in
+          <code>CITATION.cff</code> and the release notes. <code>v1.2.0</code>
+          and <code>v1.3.0</code> predate the Zenodo integration and are not
+          archived there.
+        </p>
+        <p style="margin-top:12px;">
+          <a href="https://doi.org/10.5281/zenodo.24555021"><img
+            src="https://zenodo.org/badge/DOI/10.5281/zenodo.24555021.svg"
+            alt="DOI 10.5281/zenodo.24555021" style="height:20px;"></a>
         </p>
       </div>
     </div>
@@ -2286,19 +2303,21 @@ sha256sum -c MANIFEST.sha256</code></pre>
 
       <div class="cols-2">
         <div class="reveal">
-          <h3>Software &mdash; v1.2.0</h3>
+          <h3>Software &mdash; v1.3.1 (Zenodo)</h3>
           <div class="code">
             <button class="copy" type="button" data-copy>COPY</button>
             <pre><code>@software{kotian2026esp32s3,
   author  = {Kotian, Dhruv},
-  title   = {{esp32s3-inference}: INT8 KV-cache and
-             attention kernels for the ESP32-S3},
+  title   = {{esp32s3-inference}: Memory-aware transformer
+             inference and embedded model runtime for
+             {ESP32-S3}},
   year    = {2026},
-  version = {1.2.0},
+  version = {1.3.1},
+  doi     = {10.5281/zenodo.24555021},
   license = {GPL-3.0-only},
   url     = {https://github.com/dhruvkotian/esp32s3-inference},
-  note    = {Research baseline; software artifact for the
-             ACM TECS manuscript}
+  note    = {Concept DOI 10.5281/zenodo.24555020.
+             v1.2.0 is the evaluated research baseline}
 }</code></pre>
           </div>
         </div>
@@ -2321,7 +2340,11 @@ sha256sum -c MANIFEST.sha256</code></pre>
 
       <p class="strip-note reveal">
         Machine-readable metadata is in <code>CITATION.cff</code> at the
-        repository root. The manuscript DOI will be added when it exists.
+        repository root. <code>v1.3.1</code> is archived at
+        <a href="https://doi.org/10.5281/zenodo.24555021">10.5281/zenodo.24555021</a>
+        (concept DOI
+        <a href="https://doi.org/10.5281/zenodo.24555020">10.5281/zenodo.24555020</a>).
+        An article DOI will be added only if the manuscript is published.
       </p>
     </div>
   </section>
