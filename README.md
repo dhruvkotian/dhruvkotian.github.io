@@ -12,7 +12,7 @@ A single hand-written `index.html` with inline CSS and JavaScript:
 - **Three switchable pixel themes**, remembered in `localStorage` and applied before first paint:
   - **Ocean** (default): descends with scroll from bright surface water to mid-water, deep and abyss. Five stacked CSS gradient layers are cross-faded from `scrollTop`, with a fixed depth gauge on wide screens.
   - **Space**: a fixed starfield with twinkle and parallax, nebula washes, a ringed planet, satellite, rocket, lunar footer and a matching lavender/gold palette. The gauge switches from depth in metres to altitude in kilometres.
-  - **Gothic**: a crypt of black, blood red and bone white, with a blood moon, skull, bats, an owl, a raven and a graveyard footer. An irregular web hangs at the top-left while a spider descends with scroll and stops on a tombstone, with a CSS counter showing depth from `0 m` to `3800 m`. The spider, web and readout are CSS-only. The gauge is hidden in this theme.
+  - **Gothic**: a crypt of black, blood red and bone white, with a blood moon, skull, bats, an owl, a raven and a graveyard footer. An irregular web hangs at the top-left while a spider descends with scroll and stops on a tombstone. The spider and web are CSS-only. The gauge is hidden in this theme.
 - A three-way pixel selector in the nav switches themes. It is a real radiogroup of buttons, so it works with the keyboard and announces its state.
 - CSS-only light rays, rising bubbles, marine snow and scanlines. No canvas, no background images.
 - Six pixel fish built from one SVG `<symbol>`, gliding on transform/translate animations. They fade in below the surface and are hidden under `prefers-reduced-motion`.
@@ -58,4 +58,4 @@ git push origin master
 - The depth cross-fades are computed in the first `<script>` block (`ramp()` calls). Adjust the numbers to change where each water layer takes over.
 - Themes live on `<html data-theme="ocean|space|gothic">`. Space and gothic palette overrides sit in the `html[data-theme="space"]` and `html[data-theme="gothic"]` blocks; the selector stores its choice under the `dk-theme` key in `localStorage`.
 - Theme-specific words use `data-ocean`, `data-space` and `data-gothic` attributes on the element (for example the brand and section headings). The switch script swaps the text without touching the markup.
-- The gauge reads depth in ocean and altitude in space. Gothic hides it and uses the spider readout instead. Star parallax and the altitude value are updated in the same scroll handler as the ocean layers.
+- The gauge reads depth in ocean and altitude in space. Gothic hides it and keeps only the spider and web. Star parallax and the altitude value are updated in the same scroll handler as the ocean layers.
