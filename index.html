@@ -3210,7 +3210,7 @@
               A 260K-parameter decoder running entirely on an ESP32-S3, with the
               <strong>KV cache stored as int8 in PSRAM</strong> and attention mapped onto the
               128-bit PIE integer SIMD unit. At 512 context it reaches
-              <strong>166.6 decode forwards/s</strong>, 2.898&times; the same-tree fp32 baseline.
+              <strong>166.6 decode forwards/s</strong> (168.25 sampled tokens/s), 2.898&times; the sampled-rate fp32 baseline.
             </p>
             <ul class="card-list">
               <li>int8 KV cache with an fp32 SRAM hot window</li>

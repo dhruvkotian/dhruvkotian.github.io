@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>ESP32-S3 INT8 Transformer | Dhruv Kotian</title>
-<meta name="description" content="INT8 KV caching and 128-bit PIE attention for a 260K-parameter transformer on the ESP32-S3: 166.6 decode forwards/s at 512 context, 2.898x the same-tree fp32 baseline, with raw logs and reproducible firmware." />
+<meta name="description" content="INT8 KV caching and 128-bit PIE attention for a 260K-parameter transformer on the ESP32-S3: 166.6 decode forwards/s (168.25 sampled tokens/s) at 512 context, 2.898x the sampled-rate fp32 baseline, with raw logs and reproducible firmware." />
 <meta name="author" content="Dhruv Kotian" />
 <meta name="theme-color" content="#0b7494" />
 <script>
@@ -24,7 +24,7 @@
 </script>
 <link rel="canonical" href="https://dhruvkotian.dev/esp32s3.html" />
 <meta property="og:title" content="Bytes, not FLOPs: INT8 transformer inference on the ESP32-S3" />
-<meta property="og:description" content="166.6 decode forwards/s at 512 context, 2.898x the fp32 baseline, 245,760 B int8 KV cache. Firmware, logs and negative results." />
+<meta property="og:description" content="166.6 decode forwards/s (168.25 sampled tokens/s) at 512 context, 2.898x the sampled-rate fp32 baseline, 245,760 B int8 KV cache. Firmware, logs and negative results." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://dhruvkotian.dev/esp32s3.html" />
 <meta name="twitter:card" content="summary" />
@@ -1350,16 +1350,16 @@
           <span>decode forwards/s at 512-token context</span>
         </div>
         <div class="metric">
+          <b>168.25</b>
+          <span>sampled tokens/s, same harness</span>
+        </div>
+        <div class="metric">
           <b>2.898&times;</b>
-          <span>the same-tree fp32 single-core baseline</span>
+          <span>sampled-rate comparison with the 58.06 tok/s fp32 single core</span>
         </div>
         <div class="metric">
           <b>245,760 B</b>
           <span>int8 KV payload and scales in PSRAM</span>
-        </div>
-        <div class="metric">
-          <b>6.00 ms</b>
-          <span>per decode forward, measured on the board</span>
         </div>
       </div>
 
@@ -1441,9 +1441,10 @@
       </div>
 
       <p class="section-sub reveal">
-        Three memory tiers, one execution tier. The model weights and the hot part
-        of the cache stay in internal SRAM; the cold part of the cache lives in
-        PSRAM; flash and SD are only touched on the cold path.
+        Three memory tiers, one execution tier. Most model weights and the hot
+        fp32 KV-cache window reside in internal SRAM. A small portion of the
+        weight matrices and the cold int8 KV cache reside in external PSRAM.
+        Flash and SD are reserved for model storage and cold-path loading.
       </p>
 
       <div class="stack reveal">
@@ -1595,10 +1596,12 @@
       <p class="prose reveal">
         Dual core is worth 1.281&times; at 32 KB and 1.374&times; at 64 KB. Doubling
         the cache is worth 1.188&times; on one core and 1.275&times; on two. The
-        final int8 build reaches <strong>166.73 tok/s</strong> against 58.06 for
-        fp32 single core, a <strong>2.872&times;</strong> step at the sampled
-        rate; the headline 2.898&times; compares the best final capture, 168.25
-        sampled tok/s, against the same 58.06 baseline.
+        final int8 build reaches <strong>168.25 sampled tokens/s</strong> against
+        58.06 for fp32 single core, a <strong>2.898&times;</strong> sampled-rate
+        improvement; in decode-forward terms that is 166.6 forwards/s. The build
+        before the fused long dot reached 166.73 sampled tokens/s (2.872&times;).
+        Six independent captures of the final build span 168.24&ndash;168.28
+        sampled tokens/s.
       </p>
 
       <h3 class="reveal">Seven changes that turned the cache around</h3>
@@ -1756,8 +1759,8 @@
       <div class="result-grid reveal">
         <div class="result"><b>166.6 fwd/s</b><span>decode rate at 512 context</span></div>
         <div class="result"><b>168.25 tok/s</b><span>sampled rate, same harness</span></div>
-        <div class="result"><b>2.898&times;</b><span>vs fp32 single core</span></div>
-        <div class="result"><b>2.109&times;</b><span>vs fp32 dual core</span></div>
+        <div class="result"><b>2.898&times;</b><span>sampled-rate vs fp32 single core (58.06 tok/s)</span></div>
+        <div class="result"><b>2.109&times;</b><span>sampled-rate vs fp32 dual core (79.77 tok/s)</span></div>
         <div class="result"><b>51.7 MB/s</b><span>KV scan, 85% of the port</span></div>
         <div class="result"><b>0.9995+</b><span>minimum cosine similarity</span></div>
       </div>
@@ -1772,8 +1775,8 @@
             <tr><td>Decode forwards/s, 512 context</td><td class="num">166.6</td></tr>
             <tr><td>Sampled tokens/s, same harness</td><td class="num">168.25</td></tr>
             <tr><td>Time per decode forward</td><td class="num">6.00 ms</td></tr>
-            <tr><td>Speed-up vs fp32 single core, sampled</td><td class="num">2.898&times;</td></tr>
-            <tr><td>Speed-up vs fp32 dual core, sampled</td><td class="num">2.109&times;</td></tr>
+            <tr><td>Sampled-rate speed-up vs fp32 single core (58.06 tok/s)</td><td class="num">2.898&times;</td></tr>
+            <tr><td>Sampled-rate speed-up vs fp32 dual core (79.77 tok/s)</td><td class="num">2.109&times;</td></tr>
             <tr><td>int8 KV payload and scales</td><td class="num">245,760 B</td></tr>
             <tr><td>Complete hybrid cache including hot window</td><td class="num">266,240 B</td></tr>
             <tr><td>PSRAM scan traffic</td><td class="num">238,080 B/token</td></tr>
@@ -2230,14 +2233,21 @@ sha256sum -c MANIFEST.sha256</code></pre>
             <tr><td>Cold model select (SD &rarr; PSRAM &rarr; SRAM)</td><td class="num">377.6 ms</td></tr>
             <tr><td>Cached select</td><td class="num">29.4 / 30.0 ms</td></tr>
             <tr><td>LRU cache, eight selects</td><td class="num">8/8 correct, 3 slots</td></tr>
-            <tr><td>MoE, pinned expert</td><td class="num">1.00&times; a plain forward</td></tr>
-            <tr><td>MoE, natural synthetic router</td><td class="num">~1.9&times;</td></tr>
-            <tr><td>MoE, round-robin worst case</td><td class="num">3.33&times; (4,222 vs 1,266 &micro;s)</td></tr>
+            <tr><td>MoE, pinned expert</td><td class="num">1.00&times; latency (no penalty)</td></tr>
+            <tr><td>MoE, natural synthetic router</td><td class="num">~1.9&times; latency (~2,430 vs 1,266 &micro;s, est.)</td></tr>
+            <tr><td>MoE, round-robin worst case</td><td class="num">3.33&times; latency (4,222 vs 1,266 &micro;s)</td></tr>
             <tr><td>Expert refill from PSRAM</td><td class="num">58&ndash;60 MB/s (~588 &micro;s/layer)</td></tr>
             <tr><td><code>.m8</code> blob</td><td class="num">290,816 B</td></tr>
           </tbody>
         </table>
       </div>
+
+      <p class="strip-note reveal">
+        MoE rows are per-forward latency relative to the same build with no MoE;
+        a larger number is slower, not faster. The natural-router figure is an
+        estimate, and the fixture is synthetic: no quality or routing claim is
+        made.
+      </p>
 
       <div class="prose reveal">
         <p>
@@ -2294,7 +2304,7 @@ sha256sum -c MANIFEST.sha256</code></pre>
         </div>
 
         <div class="reveal">
-          <h3>Manuscript &mdash; under review</h3>
+          <h3>Unpublished manuscript citation</h3>
           <div class="code">
             <button class="copy" type="button" data-copy>COPY</button>
             <pre><code>@article{kotian2026bytes,
@@ -2303,7 +2313,7 @@ sha256sum -c MANIFEST.sha256</code></pre>
              128-bit {PIE} Attention on {ESP32-S3}},
   journal = {ACM Transactions on Embedded Computing Systems},
   year    = {2026},
-  note    = {Manuscript under review}
+  note    = {Unpublished manuscript, under review}
 }</code></pre>
           </div>
         </div>
